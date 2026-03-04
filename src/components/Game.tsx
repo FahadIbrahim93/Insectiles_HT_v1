@@ -16,6 +16,7 @@ const LANES = 4;
 const INITIAL_SPEED = 3;
 const SPEED_INCREMENT = 0.1;
 const SPAWN_RATE = 100; // frames between spawns initially
+const TILE_HEIGHT = 200;
 
 interface InsectDef {
   type: string;
@@ -32,6 +33,7 @@ interface Insect {
   def: InsectDef;
   speed: number;
   scored: boolean;
+  sprite?: HTMLImageElement | null;
 }
 
 interface PsyEffect {
@@ -69,6 +71,7 @@ export default function Game() {
     score: 0,
     feverMode: false,
     feverFramesLeft: 0,
+    currentBackgroundPath: null as string | null,
   });
 
   const requestRef = useRef<number | undefined>(undefined);
@@ -82,6 +85,11 @@ export default function Game() {
     const lane = Math.floor(Math.random() * LANES);
     const isFever = state.current.feverMode;
     const def = isFever ? SPECIAL_INSECT_DEF : INSECT_DEFS[Math.floor(Math.random() * INSECT_DEFS.length)];
+
+    // Cache sprite once on spawn to avoid Map lookups in render loop
+    const spritePath = def.sprites ? def.sprites[def.spriteIndex % def.sprites.length] : null;
+    const sprite = spritePath ? assetLoader.get(spritePath) : null;
+
     state.current.insects.push({
       id: state.current.insectIdCounter++,
       lane,
@@ -89,6 +97,7 @@ export default function Game() {
       def,
       speed: state.current.speed,
       scored: false,
+      sprite: sprite || null,
     });
   };
 
@@ -114,6 +123,7 @@ const startGame = async () => {
       score: 0,
       feverMode: false,
       feverFramesLeft: 0,
+      currentBackgroundPath: assetLoader.getRandomFromCategory('backgrounds') || null,
     };
     // Spawn first insect immediately
     spawnInsect();
@@ -172,7 +182,7 @@ const startGame = async () => {
       .sort((a, b) => b.y - a.y)[0];
 
     // Check if the tap is within a reasonable vertical range of the lowest tile
-    const isWithinVerticalRange = targetInsect && Math.abs(y - targetInsect.y) < (200 + HIT_TOLERANCE);
+    const isWithinVerticalRange = targetInsect && Math.abs(y - targetInsect.y) < (TILE_HEIGHT + HIT_TOLERANCE);
 
     if (targetInsect && targetInsect === lowestOverall && isWithinVerticalRange) {
       state.current.psyEffects.push({
@@ -295,8 +305,7 @@ const startGame = async () => {
       if (!insect.scored) {
         insect.y += state.current.speed;
         // Game over if insect reaches bottom
-        const tileHeight = 200;
-        if (insect.y + tileHeight / 2 >= canvas.height) {
+        if (insect.y + TILE_HEIGHT / 2 >= canvas.height) {
           endGame();
           return;
         }
@@ -345,28 +354,28 @@ const startGame = async () => {
     const dynamicSaturation = 50 + (intensity * 30) + ((bassEnergy / 255) * 20);
     const dynamicLightness = 5 + (intensity * 10) + ((bassEnergy / 255) * 15);
 
-    // Create a color-shifting gradient background
-    const bgGradient = ctx.createLinearGradient(
-      canvas.width / 2 + Math.cos(state.current.frames * 0.005) * canvas.width,
-      canvas.height / 2 + Math.sin(state.current.frames * 0.005) * canvas.height,
-      canvas.width / 2 - Math.cos(state.current.frames * 0.005) * canvas.width,
-      canvas.height / 2 - Math.sin(state.current.frames * 0.005) * canvas.height
-    );
-    
-    bgGradient.addColorStop(0, `hsla(${state.current.hue}, ${dynamicSaturation}%, ${dynamicLightness}%, 1)`);
-    bgGradient.addColorStop(0.5, `hsla(${(state.current.hue + 60 * intensity) % 360}, ${dynamicSaturation}%, ${dynamicLightness * 0.8}%, 1)`);
-    bgGradient.addColorStop(1, `hsla(${(state.current.hue + 120 * intensity + (bassEnergy / 255) * 60) % 360}, ${dynamicSaturation}%, ${dynamicLightness * 1.2}%, 1)`);
-
     // Clear with psychedelic trail effect
     ctx.globalAlpha = isFever ? 0.1 : 0.3;
     
     // Try to use background image, fall back to gradient
-    const bgPath = assetLoader.getRandomFromCategory('backgrounds');
+    const bgPath = state.current.currentBackgroundPath;
     const bgImage = bgPath ? assetLoader.get(bgPath) : null;
     
     if (bgImage && bgImage.complete) {
       ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
     } else {
+      // Create a color-shifting gradient background as a fallback
+      const bgGradient = ctx.createLinearGradient(
+        canvas.width / 2 + Math.cos(state.current.frames * 0.005) * canvas.width,
+        canvas.height / 2 + Math.sin(state.current.frames * 0.005) * canvas.height,
+        canvas.width / 2 - Math.cos(state.current.frames * 0.005) * canvas.width,
+        canvas.height / 2 - Math.sin(state.current.frames * 0.005) * canvas.height
+      );
+
+      bgGradient.addColorStop(0, `hsla(${state.current.hue}, ${dynamicSaturation}%, ${dynamicLightness}%, 1)`);
+      bgGradient.addColorStop(0.5, `hsla(${(state.current.hue + 60 * intensity) % 360}, ${dynamicSaturation}%, ${dynamicLightness * 0.8}%, 1)`);
+      bgGradient.addColorStop(1, `hsla(${(state.current.hue + 120 * intensity + (bassEnergy / 255) * 60) % 360}, ${dynamicSaturation}%, ${dynamicLightness * 1.2}%, 1)`);
+
       ctx.fillStyle = bgGradient;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
@@ -500,17 +509,16 @@ const startGame = async () => {
 
     state.current.insects.forEach((insect) => {
       if (!insect.scored) {
-        const tileHeight = 200;
         const wave = Math.sin(insect.y * 0.01 + state.current.frames * 0.1) * ((isFever ? 30 : 10) * intensity);
         const xOffset = wave;
 
         // Draw tile background with high opacity and a bright border for visibility
         ctx.fillStyle = `hsla(${(state.current.hue + insect.lane * 45) % 360}, 90%, ${isFever ? '60%' : '30%'}, 0.95)`;
-        ctx.fillRect(insect.lane * laneWidth + xOffset, insect.y - tileHeight / 2, laneWidth, tileHeight);
+        ctx.fillRect(insect.lane * laneWidth + xOffset, insect.y - TILE_HEIGHT / 2, laneWidth, TILE_HEIGHT);
         
         ctx.strokeStyle = `hsla(${(state.current.hue + insect.lane * 45 + 180) % 360}, 100%, 80%, 1)`;
         ctx.lineWidth = 4;
-        ctx.strokeRect(insect.lane * laneWidth + xOffset, insect.y - tileHeight / 2, laneWidth, tileHeight);
+        ctx.strokeRect(insect.lane * laneWidth + xOffset, insect.y - TILE_HEIGHT / 2, laneWidth, TILE_HEIGHT);
         
         // Draw insect emoji
         ctx.save();
@@ -524,11 +532,9 @@ const startGame = async () => {
         ctx.rotate(state.current.frames * (isFever ? 0.2 : 0.05) * (insect.id % 2 === 0 ? 1 : -1));
         
         const def = insect.def;
+        const sprite = insect.sprite;
         
-        // Try to use sprite, fall back to emoji
-        const spritePath = def.sprites ? def.sprites[def.spriteIndex % def.sprites.length] : null;
-        const sprite = spritePath ? assetLoader.get(spritePath) : null;
-        
+        // Use cached sprite, fall back to emoji
         if (sprite && sprite.complete) {
           ctx.drawImage(sprite, -40, -40, 80, 80);
         } else if (def.type === 'weed_ant') {
@@ -594,10 +600,10 @@ const startGame = async () => {
         const symbols = ['👁️', '👅', '🖐️', '🍄', '🌀', '🧠'];
         const numArms = 8;
         
+        ctx.font = `${20 + progress * 40}px Arial`;
         for (let i = 0; i < numArms; i++) {
           ctx.save();
           ctx.rotate((i * Math.PI * 2) / numArms);
-          ctx.font = `${20 + progress * 40}px Arial`;
           ctx.fillText(symbols[i % symbols.length], 0, -50 * scale);
           ctx.restore();
         }
