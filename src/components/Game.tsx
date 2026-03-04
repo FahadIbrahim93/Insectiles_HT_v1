@@ -1,14 +1,15 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { audio } from '../utils/audio';
+import { assetLoader, ASSETS } from '../utils/assetLoader';
 
 const INSECT_DEFS = [
-  { type: 'weed_ant', emojis: ['🌿', '🐜'] },
-  { type: 'rainbow_ant', emojis: ['🐜'], rainbow: true },
-  { type: 'neon_ant', emojis: ['🐜'], color: 'rgba(200, 0, 255, 0.8)' },
-  { type: 'alien_bug', emojis: ['👽', '🐛'] },
-  { type: 'fire_ice_ant', emojis: ['🐜'], gradient: ['rgba(255,0,0,0.8)', 'rgba(0,200,255,0.8)'] }
+  { type: 'weed_ant', sprites: ASSETS.insects, spriteIndex: 0 },
+  { type: 'rainbow_ant', sprites: ASSETS.insects, spriteIndex: 1 },
+  { type: 'neon_ant', sprites: ASSETS.insects, spriteIndex: 2 },
+  { type: 'alien_bug', sprites: ASSETS.insects, spriteIndex: 3 },
+  { type: 'fire_ice_ant', sprites: ASSETS.insects, spriteIndex: 0 },
 ];
-const SPECIAL_INSECT_DEF = { type: 'ladybug', emojis: ['🍁', '🐞'] };
+const SPECIAL_INSECT_DEF = { type: 'ladybug', sprites: ASSETS.insects, spriteIndex: 1 };
 const FEVER_SCORE_THRESHOLD = 500;
 const FEVER_DURATION = 600; // frames (about 10 seconds at 60fps)
 const LANES = 4;
@@ -83,7 +84,8 @@ export default function Game() {
     });
   };
 
-  const startGame = () => {
+const startGame = async () => {
+    await assetLoader.load();
     audio.init();
     audio.playBgm();
     setIsPlaying(true);
@@ -349,8 +351,17 @@ export default function Game() {
 
     // Clear with psychedelic trail effect
     ctx.globalAlpha = isFever ? 0.1 : 0.3;
-    ctx.fillStyle = bgGradient;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Try to use background image, fall back to gradient
+    const bgPath = assetLoader.getRandomFromCategory('backgrounds');
+    const bgImage = bgPath ? assetLoader.get(bgPath) : null;
+    
+    if (bgImage && bgImage.complete) {
+      ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
+    } else {
+      ctx.fillStyle = bgGradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
     ctx.globalAlpha = 1.0;
 
     // Beat flash based on bass energy
@@ -506,7 +517,13 @@ export default function Game() {
         
         const def = insect.def;
         
-        if (def.type === 'weed_ant') {
+        // Try to use sprite, fall back to emoji
+        const spritePath = def.sprites ? def.sprites[def.spriteIndex % def.sprites.length] : null;
+        const sprite = spritePath ? assetLoader.get(spritePath) : null;
+        
+        if (sprite && sprite.complete) {
+          ctx.drawImage(sprite, -40, -40, 80, 80);
+        } else if (def.type === 'weed_ant') {
           ctx.font = '50px Arial';
           ctx.fillText('🌿', 0, -15);
           ctx.fillText('🐜', 0, 15);
@@ -700,11 +717,18 @@ export default function Game() {
     <div ref={containerRef} className="relative w-full h-full sm:max-w-md sm:h-[90vh] mx-auto bg-black overflow-hidden shadow-2xl sm:rounded-2xl sm:border border-white/10">
       {/* Score Display */}
       <div className="absolute top-4 left-0 right-0 z-10 flex justify-between px-6 pointer-events-none">
-        <div className="text-white font-mono text-2xl drop-shadow-md flex flex-col">
-          <span>Score: {score}</span>
-          {state.current.feverMode && (
-            <span className="text-fuchsia-400 animate-pulse text-xl font-bold">FEVER MODE!</span>
-          )}
+        <div className="flex items-center gap-3">
+          <img 
+            src="/Pink_ant_mascot_game_sprite_3379ebd6e6.jpeg" 
+            alt="Mascot" 
+            className="w-12 h-12 rounded-full border-2 border-white/30"
+          />
+          <div className="text-white font-mono text-2xl drop-shadow-md flex flex-col">
+            <span>Score: {score}</span>
+            {state.current.feverMode && (
+              <span className="text-fuchsia-400 animate-pulse text-xl font-bold">FEVER MODE!</span>
+            )}
+          </div>
         </div>
         <div className="text-white/50 font-mono text-xl drop-shadow-md">
           Best: {highScore}
