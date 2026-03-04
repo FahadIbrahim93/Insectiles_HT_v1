@@ -1,9 +1,11 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { audio } from '../utils/audio';
 import { useGameStore } from '../store/useGameStore';
 import { ASSET_PATHS, GAME_SETTINGS } from '../constants';
 import { preloadAssets } from '../utils/assetLoader';
 import { motion, AnimatePresence } from 'motion/react';
+import { GameRenderer } from '../engine/Renderer';
+import { ObjectPool } from '../engine/ObjectPool';
 
 interface Insect {
   id: number;
@@ -11,7 +13,7 @@ interface Insect {
   y: number;
   spriteIndex: number;
   speed: number;
-  isFeverTarget?: boolean;
+  active: boolean;
 }
 
 interface PsyEffect {
@@ -20,6 +22,7 @@ interface PsyEffect {
   life: number;
   maxLife: number;
   hue: number;
+  active: boolean;
 }
 
 export default function Game() {
@@ -34,6 +37,16 @@ export default function Game() {
   const imagesRef = useRef<HTMLImageElement[]>([]);
   const videosRef = useRef<HTMLVideoElement[]>([]);
 
+  const insectPool = useMemo(() => new ObjectPool<Insect>(
+    () => ({ id: 0, lane: 0, y: 0, spriteIndex: 0, speed: 0, active: false }),
+    (obj) => { obj.active = false; }
+  ), []);
+
+  const effectPool = useMemo(() => new ObjectPool<PsyEffect>(
+    () => ({ x: 0, y: 0, life: 0, maxLife: 30, hue: 0, active: false }),
+    (obj) => { obj.active = false; }
+  ), []);
+
   const state = useRef({
     insects: [] as Insect[],
     psyEffects: [] as PsyEffect[],
@@ -46,7 +59,7 @@ export default function Game() {
     shake: 0,
   });
 
-  const requestRef = useRef<number>();
+  const requestRef = useRef<number>(null!) ;
 
   useEffect(() => {
     const load = async () => {
@@ -68,20 +81,22 @@ export default function Game() {
   const spawnInsect = () => {
     const lane = Math.floor(Math.random() * GAME_SETTINGS.LANE_COUNT);
     const spriteIndex = isFeverMode ? (Math.floor(Math.random() * 4) + 8) : Math.floor(Math.random() * 4);
-    state.current.insects.push({
-      id: state.current.insectIdCounter++,
-      lane,
-      y: -GAME_SETTINGS.TILE_HEIGHT,
-      spriteIndex,
-      speed: state.current.speed * (isFeverMode ? 1.5 : 1),
-      isFeverTarget: isFeverMode,
-    });
+    const insect = insectPool.acquire();
+    insect.id = state.current.insectIdCounter++;
+    insect.lane = lane;
+    insect.y = -GAME_SETTINGS.TILE_HEIGHT;
+    insect.spriteIndex = spriteIndex;
+    insect.speed = state.current.speed * (isFeverMode ? 1.5 : 1);
+    insect.active = true;
+    state.current.insects.push(insect);
   };
 
   const startGame = () => {
     audio.init();
     audio.playBgm();
     startStoreGame();
+    state.current.insects.forEach(i => insectPool.release(i));
+    state.current.psyEffects.forEach(e => effectPool.release(e));
     state.current = {
       insects: [],
       psyEffects: [],
@@ -94,12 +109,6 @@ export default function Game() {
       shake: 0,
     };
     requestRef.current = requestAnimationFrame(update);
-  };
-
-  const createPsyEffect = (x: number, y: number) => {
-    state.current.psyEffects.push({
-      x, y, life: 0, maxLife: 30, hue: Math.random() * 360
-    });
   };
 
   const update = () => {
@@ -128,9 +137,10 @@ export default function Game() {
       state.current.lastSpawnFrame = state.current.frames;
     }
 
+    const canvasHeight = canvasRef.current?.height || 0;
     state.current.insects.forEach((insect) => {
       insect.y += insect.speed;
-      if (insect.y > (canvasRef.current?.height || 0)) {
+      if (insect.y > canvasHeight) {
         if (!isFeverMode) {
           setGameOver(true);
           audio.playErrorSound();
@@ -143,7 +153,11 @@ export default function Game() {
 
     state.current.psyEffects = state.current.psyEffects.filter(p => {
       p.life++;
-      return p.life < p.maxLife;
+      if (p.life >= p.maxLife) {
+          effectPool.release(p);
+          return false;
+      }
+      return true;
     });
 
     draw();
@@ -152,57 +166,24 @@ export default function Game() {
 
   const draw = () => {
     const canvas = canvasRef.current;
-    const ctx = canvas?.getContext('2d');
+    const ctx = canvas?.getContext('2d', { alpha: false });
     if (!canvas || !ctx) return;
 
     ctx.save();
     if (state.current.shake > 0) ctx.translate(Math.random() * state.current.shake, Math.random() * state.current.shake);
 
-    if (isFeverMode) {
-      ctx.fillStyle = `hsla(${state.current.hue}, 80%, 20%, 1)`;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      const video = videosRef.current[0];
-      if (video && !video.paused) {
-         ctx.globalAlpha = 0.5;
-         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-         ctx.globalAlpha = 1.0;
-      }
-    } else {
-      const bgImage = imagesRef.current[state.current.bgIndex];
-      if (bgImage) ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
-      else { ctx.fillStyle = '#000'; ctx.fillRect(0, 0, canvas.width, canvas.height); }
-    }
+    GameRenderer.drawBackground(
+      ctx, canvas, isFeverMode, state.current.hue,
+      imagesRef.current[state.current.bgIndex], videosRef.current[0]
+    );
 
-    ctx.fillStyle = `hsla(${state.current.hue}, 50%, 50%, ${isFeverMode ? 0.3 : 0.1})`;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    GameRenderer.drawInsects(
+      ctx, canvas, state.current.insects, imagesRef.current,
+      isFeverMode, state.current.hue, state.current.frames
+    );
 
-    const laneWidth = canvas.width / GAME_SETTINGS.LANE_COUNT;
-    state.current.insects.forEach((insect) => {
-      const img = imagesRef.current[insect.spriteIndex];
-      if (img) {
-        const size = GAME_SETTINGS.TILE_HEIGHT * (isFeverMode ? 1.2 : 0.8);
-        ctx.save();
-        ctx.translate(insect.lane * laneWidth + laneWidth / 2, insect.y + GAME_SETTINGS.TILE_HEIGHT / 2);
-        ctx.rotate(state.current.frames * (isFeverMode ? 0.2 : 0.05) * (insect.id % 2 === 0 ? 1 : -1));
-        if (isFeverMode) { ctx.shadowBlur = 20; ctx.shadowColor = `hsla(${state.current.hue}, 100%, 50%, 1)`; }
-        ctx.drawImage(img, -size/2, -size/2, size, size);
-        ctx.restore();
-      }
-    });
+    GameRenderer.drawPsyEffects(ctx, state.current.psyEffects);
 
-    state.current.psyEffects.forEach((p) => {
-      const progress = p.life / p.maxLife;
-      ctx.save();
-      ctx.translate(p.x, p.y);
-      ctx.globalAlpha = 1 - progress;
-      ctx.rotate(progress * Math.PI * 2);
-      ctx.font = `${30 + progress * 50}px Arial`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      const symbols = ['🍄', '🌀', '🧠', '✨', '🐜'];
-      ctx.fillText(symbols[Math.floor(p.hue % symbols.length)], 0, 0);
-      ctx.restore();
-    });
     ctx.restore();
   };
 
@@ -215,15 +196,33 @@ export default function Game() {
     const y = clientY - rect.top;
     const laneWidth = canvas.width / GAME_SETTINGS.LANE_COUNT;
     const clickedLane = Math.floor(x / laneWidth);
-    const laneInsects = state.current.insects
-      .filter(ins => ins.lane === clickedLane)
-      .sort((a, b) => b.y - a.y);
-    if (laneInsects.length > 0) {
-      const target = laneInsects[0];
-      state.current.insects = state.current.insects.filter(ins => ins.id !== target.id);
+
+    let targetIndex = -1;
+    let maxY = -1;
+
+    for (let i = 0; i < state.current.insects.length; i++) {
+        const ins = state.current.insects[i];
+        if (ins.lane === clickedLane && ins.y > maxY) {
+            maxY = ins.y;
+            targetIndex = i;
+        }
+    }
+
+    if (targetIndex !== -1) {
+      const target = state.current.insects[targetIndex];
+      const effect = effectPool.acquire();
+      effect.x = target.lane * laneWidth + laneWidth / 2;
+      effect.y = target.y + GAME_SETTINGS.TILE_HEIGHT / 2;
+      effect.life = 0;
+      effect.hue = Math.random() * 360;
+      effect.active = true;
+      state.current.psyEffects.push(effect);
+
+      state.current.insects.splice(targetIndex, 1);
+      insectPool.release(target);
+
       addScore(isFeverMode ? 20 : 10);
       state.current.shake = isFeverMode ? 15 : 5;
-      createPsyEffect(target.lane * laneWidth + laneWidth / 2, target.y + GAME_SETTINGS.TILE_HEIGHT / 2);
       audio.playTapSound(isFeverMode);
       videosRef.current.forEach(v => { if (v.paused) v.play().catch(() => {}); });
     }

@@ -1,53 +1,77 @@
-class AudioEngine {
-  ctx: AudioContext | null = null;
-  masterGain: GainNode | null = null;
-  bpm = 128;
-  isPlaying = false;
-  current16thNote = 0;
-  nextNoteTime = 0.0;
-  scheduleAheadTime = 0.1;
-  lookahead = 25.0;
-  timerID: number | null = null;
-  startTime = 0;
-  filterCutoff = 1000;
-  filterSweepDir = 1;
-  noiseBuffer: AudioBuffer | null = null;
-  notes = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25];
-  noteIndex = 0;
+declare global {
+  interface Window {
+    webkitAudioContext: typeof AudioContext;
+  }
+}
 
-  init() {
+/**
+ * Procedural Audio Engine for Pinik Pipra.
+ * Provides generative techno and interactive sound synthesis.
+ */
+class AudioEngine {
+  private ctx: AudioContext | null = null;
+  private masterGain: GainNode | null = null;
+  private bpm = 128;
+  public isPlaying = false;
+
+  private current16thNote = 0;
+  private nextNoteTime = 0.0;
+  private scheduleAheadTime = 0.1;
+  private lookahead = 25.0;
+  private timerID: number | null = null;
+  private startTime = 0;
+
+  private filterCutoff = 1000;
+  private filterSweepDir = 1;
+  private noiseBuffer: AudioBuffer | null = null;
+
+  private notes = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25];
+  private noteIndex = 0;
+
+  public init() {
     if (this.ctx) return;
-    this.ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    this.ctx = new AudioContextClass();
     this.masterGain = this.ctx.createGain();
     this.masterGain.connect(this.ctx.destination);
-    this.masterGain.gain.value = 0.5;
+    this.masterGain.gain.value = 0.4; // Slightly lower default master volume
+
     const bufferSize = 2 * this.ctx.sampleRate;
     this.noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
     const output = this.noiseBuffer.getChannelData(0);
-    for (let i = 0; i < bufferSize; i++) output[i] = Math.random() * 2 - 1;
+    for (let i = 0; i < bufferSize; i++) {
+        output[i] = Math.random() * 2 - 1;
+    }
   }
 
-  nextNote() {
+  private nextNote() {
     const secondsPerBeat = 60.0 / this.bpm;
     this.nextNoteTime += 0.25 * secondsPerBeat;
     this.current16thNote = (this.current16thNote + 1) % 16;
   }
 
-  scheduleNote(beatNumber: number, time: number) {
+  private scheduleNote(beatNumber: number, time: number) {
     if (!this.ctx || !this.masterGain) return;
     const bar = Math.floor(this.current16thNote / 16);
     const barOfSection = bar % 8;
     const section = Math.floor(bar / 8) % 4;
+
     let playKick = false, playBass = false, playSnare = false, playClosedHat = false, playOpenHat = false, playAcid = false, playArp = false;
+
     if (section === 0) {
       if (beatNumber % 4 === 0) playKick = true;
       if (beatNumber % 4 !== 0) playBass = true;
       if (beatNumber % 2 === 0) playClosedHat = true;
       if (Math.random() > 0.8) playAcid = true;
     } else if (section === 1) {
-      if (barOfSection < 4) { if (beatNumber % 4 === 0) { playKick = true; playSnare = true; } if (beatNumber % 4 !== 0) playBass = true; }
-      else if (barOfSection < 6) { if (beatNumber % 2 === 0) { playKick = true; playSnare = true; } }
-      else { playKick = true; playSnare = true; }
+      if (barOfSection < 4) {
+        if (beatNumber % 4 === 0) { playKick = true; playSnare = true; }
+        if (beatNumber % 4 !== 0) playBass = true;
+      } else if (barOfSection < 6) {
+        if (beatNumber % 2 === 0) { playKick = true; playSnare = true; }
+      } else {
+        playKick = true; playSnare = true;
+      }
       if (Math.random() > 0.5) playAcid = true;
     } else if (section === 2) {
       if (beatNumber % 4 === 0) playKick = true;
@@ -61,6 +85,7 @@ class AudioEngine {
       if (Math.random() > 0.4) playAcid = true;
       if (barOfSection === 7 && beatNumber % 4 === 0) playSnare = true;
     }
+
     if (playKick) this.playKick(time);
     if (playBass) this.playBass(time, section);
     if (playSnare) this.playSnare(time);
@@ -70,7 +95,7 @@ class AudioEngine {
     if (playArp) this.playArp(time, beatNumber, bar);
   }
 
-  playKick(time: number) {
+  private playKick(time: number) {
     if (!this.ctx || !this.masterGain) return;
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
@@ -82,13 +107,15 @@ class AudioEngine {
     osc.start(time); osc.stop(time + 0.5);
   }
 
-  playBass(time: number, section: number) {
+  private playBass(time: number, section: number) {
     if (!this.ctx || !this.masterGain) return;
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
     const filter = this.ctx.createBiquadFilter();
-    osc.type = 'sawtooth'; osc.frequency.value = section === 2 ? 43.65 : 87.31;
-    filter.type = 'lowpass'; filter.frequency.setValueAtTime(1200, time);
+    osc.type = 'sawtooth';
+    osc.frequency.value = section === 2 ? 43.65 : 87.31;
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(1200, time);
     filter.frequency.exponentialRampToValueAtTime(100, time + 0.1);
     gain.gain.setValueAtTime(0.7, time);
     gain.gain.exponentialRampToValueAtTime(0.01, time + 0.15);
@@ -96,7 +123,7 @@ class AudioEngine {
     osc.start(time); osc.stop(time + 0.15);
   }
 
-  playHat(time: number, isOpen: boolean) {
+  private playHat(time: number, isOpen: boolean) {
     if (!this.ctx || !this.masterGain || !this.noiseBuffer) return;
     const noise = this.ctx.createBufferSource();
     noise.buffer = this.noiseBuffer;
@@ -109,7 +136,7 @@ class AudioEngine {
     noise.start(time); noise.stop(time + 0.2);
   }
 
-  playSnare(time: number) {
+  private playSnare(time: number) {
     if (!this.ctx || !this.masterGain || !this.noiseBuffer) return;
     const noise = this.ctx.createBufferSource();
     noise.buffer = this.noiseBuffer;
@@ -120,20 +147,26 @@ class AudioEngine {
     noiseGain.gain.exponentialRampToValueAtTime(0.01, time + 0.2);
     noise.connect(noiseFilter); noiseFilter.connect(noiseGain); noiseGain.connect(this.masterGain);
     noise.start(time); noise.stop(time + 0.2);
+
     const osc = this.ctx.createOscillator();
-    osc.type = 'triangle'; const oscGain = this.ctx.createGain();
-    osc.frequency.setValueAtTime(250, time); osc.frequency.exponentialRampToValueAtTime(100, time + 0.1);
-    oscGain.gain.setValueAtTime(0.4, time); oscGain.gain.exponentialRampToValueAtTime(0.01, time + 0.1);
-    osc.connect(oscGain); oscGain.connect(this.masterGain); osc.start(time); osc.stop(time + 0.2);
+    osc.type = 'triangle';
+    const oscGain = this.ctx.createGain();
+    osc.frequency.setValueAtTime(250, time);
+    osc.frequency.exponentialRampToValueAtTime(100, time + 0.1);
+    oscGain.gain.setValueAtTime(0.4, time);
+    oscGain.gain.exponentialRampToValueAtTime(0.01, time + 0.1);
+    osc.connect(oscGain); oscGain.connect(this.masterGain);
+    osc.start(time); osc.stop(time + 0.2);
   }
 
-  playAcid(time: number, beatNumber: number, section: number) {
+  private playAcid(time: number, beatNumber: number, section: number) {
     if (!this.ctx || !this.masterGain) return;
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
     const filter = this.ctx.createBiquadFilter();
     const acidNotes = [174.61, 196.00, 233.08, 261.63, 311.13];
-    osc.type = 'square'; osc.frequency.value = acidNotes[beatNumber % acidNotes.length] * (section === 2 ? 4 : 2);
+    osc.type = 'square';
+    osc.frequency.value = acidNotes[beatNumber % acidNotes.length] * (section === 2 ? 4 : 2);
     this.filterCutoff += (section === 1 ? 100 : 50) * this.filterSweepDir;
     if (this.filterCutoff > 4000) this.filterSweepDir = -1;
     if (this.filterCutoff < 300) this.filterSweepDir = 1;
@@ -146,7 +179,7 @@ class AudioEngine {
     osc.start(time); osc.stop(time + 0.2);
   }
 
-  playArp(time: number, beatNumber: number, bar: number) {
+  private playArp(time: number, beatNumber: number, bar: number) {
     if (!this.ctx || !this.masterGain) return;
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
@@ -154,8 +187,10 @@ class AudioEngine {
     const chords = [[174.61, 207.65, 261.63], [155.56, 196.00, 233.08], [138.59, 164.81, 207.65], [130.81, 164.81, 196.00]];
     const chord = chords[Math.floor(bar / 2) % 4];
     const note = chord[beatNumber % 3] * 2;
-    osc.type = 'sawtooth'; osc.frequency.value = note;
-    filter.type = 'lowpass'; filter.frequency.setValueAtTime(2500, time);
+    osc.type = 'sawtooth';
+    osc.frequency.value = note;
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(2500, time);
     filter.frequency.exponentialRampToValueAtTime(300, time + 0.2);
     gain.gain.setValueAtTime(0.15, time);
     gain.gain.exponentialRampToValueAtTime(0.01, time + 0.2);
@@ -163,7 +198,7 @@ class AudioEngine {
     osc.start(time); osc.stop(time + 0.2);
   }
 
-  scheduler() {
+  private scheduler() {
     if (!this.ctx) return;
     while (this.nextNoteTime < this.ctx.currentTime + this.scheduleAheadTime) {
       this.scheduleNote(this.current16thNote, this.nextNoteTime);
@@ -172,33 +207,38 @@ class AudioEngine {
     this.timerID = window.setTimeout(() => this.scheduler(), this.lookahead);
   }
 
-  playBgm() {
-    if (!this.ctx) return;
+  public playBgm() {
+    if (!this.ctx) this.init();
     if (this.isPlaying) return;
     this.isPlaying = true;
-    if (this.ctx.state === 'suspended') this.ctx.resume();
-    this.startTime = this.ctx.currentTime;
-    this.nextNoteTime = this.ctx.currentTime + 0.1;
+    if (this.ctx?.state === 'suspended') this.ctx.resume();
+    this.startTime = this.ctx?.currentTime || 0;
+    this.nextNoteTime = this.startTime + 0.1;
     this.current16thNote = 0;
     this.scheduler();
   }
 
-  stopBgm() {
+  public stopBgm() {
     this.isPlaying = false;
-    if (this.timerID !== null) { window.clearTimeout(this.timerID); this.timerID = null; }
+    if (this.timerID !== null) {
+        window.clearTimeout(this.timerID);
+        this.timerID = null;
+    }
   }
 
-  playTapSound(isFever = false) {
+  public playTapSound(isFever = false) {
     if (!this.ctx || !this.masterGain) return;
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
     if (isFever) {
-      osc.type = 'sine'; osc.frequency.setValueAtTime(880, this.ctx.currentTime);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(880, this.ctx.currentTime);
       osc.frequency.exponentialRampToValueAtTime(1760, this.ctx.currentTime + 0.1);
       gain.gain.setValueAtTime(0.8, this.ctx.currentTime);
     } else {
       const freq = this.notes[this.noteIndex % this.notes.length];
-      this.noteIndex++; osc.type = 'triangle';
+      this.noteIndex++;
+      osc.type = 'triangle';
       osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
       gain.gain.setValueAtTime(0.5, this.ctx.currentTime);
     }
@@ -207,11 +247,12 @@ class AudioEngine {
     osc.start(); osc.stop(this.ctx.currentTime + 0.3);
   }
 
-  playFeverActivation() {
+  public playFeverActivation() {
     if (!this.ctx || !this.masterGain) return;
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
-    osc.type = 'sawtooth'; osc.frequency.setValueAtTime(110, this.ctx.currentTime);
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(110, this.ctx.currentTime);
     osc.frequency.exponentialRampToValueAtTime(880, this.ctx.currentTime + 0.5);
     gain.gain.setValueAtTime(1, this.ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.5);
@@ -219,11 +260,12 @@ class AudioEngine {
     osc.start(); osc.stop(this.ctx.currentTime + 0.5);
   }
 
-  playErrorSound() {
+  public playErrorSound() {
     if (!this.ctx || !this.masterGain) return;
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
-    osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, this.ctx.currentTime);
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(150, this.ctx.currentTime);
     osc.frequency.exponentialRampToValueAtTime(40, this.ctx.currentTime + 0.3);
     gain.gain.setValueAtTime(0.8, this.ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.3);
@@ -231,4 +273,5 @@ class AudioEngine {
     osc.start(); osc.stop(this.ctx.currentTime + 0.3);
   }
 }
+
 export const audio = new AudioEngine();

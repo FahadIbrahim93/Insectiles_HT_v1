@@ -1,14 +1,15 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
+import React from 'react';
 import Game from './components/Game';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
-export default function App() {
+function App() {
   return (
-    <div className="h-full w-full bg-zinc-950 flex items-center justify-center">
-      <Game />
+    <div className="w-full h-screen bg-black flex items-center justify-center p-0 sm:p-4 overflow-hidden">
+      <ErrorBoundary>
+        <Game />
+      </ErrorBoundary>
     </div>
   );
 }
+
+export default App;
