@@ -34,7 +34,7 @@ class AudioEngine {
     this.ctx = new AudioContextClass();
     this.masterGain = this.ctx.createGain();
     this.masterGain.connect(this.ctx.destination);
-    this.masterGain.gain.value = 0.4; // Slightly lower default master volume
+    this.masterGain.gain.value = 0.4;
 
     const bufferSize = 2 * this.ctx.sampleRate;
     this.noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
@@ -224,6 +224,14 @@ class AudioEngine {
         window.clearTimeout(this.timerID);
         this.timerID = null;
     }
+  }
+
+  public dispose() {
+      this.stopBgm();
+      if (this.ctx) {
+          this.ctx.close();
+          this.ctx = null;
+      }
   }
 
   public playTapSound(isFever = false) {

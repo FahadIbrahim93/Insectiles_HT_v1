@@ -16,7 +16,7 @@ export interface RenderableEffect {
 }
 
 /**
- * GameRenderer handle high-performance canvas drawing.
+ * GameRenderer handles high-performance canvas drawing.
  * Isolated from React state to maximize FPS and maintain clean modular boundaries.
  */
 export class GameRenderer {
@@ -28,7 +28,6 @@ export class GameRenderer {
     bgImage?: HTMLImageElement,
     video?: HTMLVideoElement
   ) {
-    // Optimization: avoid state changes if possible, but canvas clearing is necessary
     if (isFeverMode) {
       ctx.fillStyle = `hsla(${hue}, 80%, 20%, 1)`;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -46,7 +45,6 @@ export class GameRenderer {
       }
     }
 
-    // Dynamic overlay based on current game hue
     ctx.fillStyle = `hsla(${hue}, 50%, 50%, ${isFeverMode ? 0.3 : 0.1})`;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
   }
@@ -63,7 +61,8 @@ export class GameRenderer {
     const laneWidth = canvas.width / GAME_SETTINGS.LANE_COUNT;
     const tileHeight = GAME_SETTINGS.TILE_HEIGHT;
 
-    for (const insect of insects) {
+    for (let i = 0; i < insects.length; i++) {
+      const insect = insects[i];
       const img = images[insect.spriteIndex];
       if (!img) continue;
 
@@ -71,7 +70,6 @@ export class GameRenderer {
       ctx.save();
       ctx.translate(insect.lane * laneWidth + laneWidth / 2, insect.y + tileHeight / 2);
 
-      // Wobble animation logic
       const rotation = frames * (isFeverMode ? 0.2 : 0.05) * (insect.id % 2 === 0 ? 1 : -1);
       ctx.rotate(rotation);
 
@@ -90,7 +88,8 @@ export class GameRenderer {
     effects: RenderableEffect[]
   ) {
     const symbols = ['🍄', '🌀', '🧠', '✨', '🐜'];
-    for (const p of effects) {
+    for (let i = 0; i < effects.length; i++) {
+      const p = effects[i];
       const progress = p.life / p.maxLife;
       ctx.save();
       ctx.translate(p.x, p.y);

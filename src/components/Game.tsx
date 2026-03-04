@@ -59,7 +59,7 @@ export default function Game() {
     shake: 0,
   });
 
-  const requestRef = useRef<number>(null!) ;
+  const requestRef = useRef<number>(null!);
 
   useEffect(() => {
     const load = async () => {
@@ -72,10 +72,14 @@ export default function Game() {
         videosRef.current = videos;
         setAssetsLoaded(true);
       } catch (error) {
-        console.error("Failed to load assets", error);
+        console.error("Critical Asset Failure", error);
       }
     };
     load();
+    return () => {
+        audio.dispose();
+        if (requestRef.current) cancelAnimationFrame(requestRef.current);
+    };
   }, []);
 
   const spawnInsect = () => {
@@ -245,7 +249,7 @@ export default function Game() {
 
   if (!assetsLoaded) {
     return (
-      <div className="flex items-center justify-center w-full h-full bg-black text-white">
+      <div className="flex items-center justify-center w-full h-full bg-black text-white" aria-busy="true">
         <div className="text-2xl animate-pulse font-mono tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-500 via-cyan-500 to-yellow-500">LOADING PINIK PIPRA...</div>
       </div>
     );
@@ -253,7 +257,7 @@ export default function Game() {
 
   return (
     <div ref={containerRef} className="relative w-full h-full sm:max-w-md sm:h-[90vh] mx-auto bg-black overflow-hidden shadow-2xl sm:rounded-2xl sm:border border-white/10">
-      <div className="absolute top-4 left-0 right-0 z-10 flex flex-col px-6 pointer-events-none">
+      <div className="absolute top-4 left-0 right-0 z-10 flex flex-col px-6 pointer-events-none" aria-label="Game Info">
         <div className="flex justify-between items-start">
             <div className="text-white font-mono text-2xl drop-shadow-md flex flex-col">
             <motion.span animate={{ scale: isFeverMode ? [1, 1.1, 1] : 1 }} transition={{ repeat: Infinity, duration: 0.5 }}>
@@ -266,7 +270,7 @@ export default function Game() {
             <div className="text-white/50 font-mono text-xl drop-shadow-md">Best: {highScore}</div>
         </div>
         {!isFeverMode && (
-            <div className="w-full h-2 bg-white/10 rounded-full mt-2 overflow-hidden backdrop-blur-sm border border-white/5">
+            <div className="w-full h-2 bg-white/10 rounded-full mt-2 overflow-hidden backdrop-blur-sm border border-white/5" role="progressbar" aria-valuenow={feverProgress * 100} aria-valuemin={0} aria-valuemax={100}>
                 <motion.div className="h-full bg-gradient-to-r from-fuchsia-500 via-purple-500 to-cyan-500" initial={{ width: 0 }} animate={{ width: `${feverProgress * 100}%` }} />
             </div>
         )}
@@ -277,19 +281,20 @@ export default function Game() {
         className="block w-full h-full touch-none"
         onMouseDown={(e) => handleInteraction(e.clientX, e.clientY)}
         onTouchStart={(e) => handleInteraction(e.touches[0].clientX, e.touches[0].clientY)}
+        aria-label="Game Board"
       />
 
       <AnimatePresence>
       {(!isPlaying || gameOver) && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/80 backdrop-blur-xl">
-          <motion.h1 animate={{ scale: [1, 1.05, 1], rotate: [-2, 2, -2] }} transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }} className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-500 via-cyan-500 to-yellow-500 mb-2 text-center drop-shadow-[0_0_20px_rgba(0,0,0,1)] transform -skew-x-6">PINIK<br/>PIPRA</motion.h1>
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/80 backdrop-blur-xl" role="dialog" aria-modal="true" aria-labelledby="game-title">
+          <motion.h1 id="game-title" animate={{ scale: [1, 1.05, 1], rotate: [-2, 2, -2] }} transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }} className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-500 via-cyan-500 to-yellow-500 mb-2 text-center drop-shadow-[0_0_20px_rgba(0,0,0,1)] transform -skew-x-6">PINIK<br/>PIPRA</motion.h1>
           {gameOver && (
             <motion.div initial={{ scale: 0.8, y: 20 }} animate={{ scale: 1, y: 0 }} className="mb-8 text-center">
               <p className="text-red-500 font-mono text-xl mb-2 tracking-tighter">TRIP ENDED (GAME OVER)</p>
               <p className="text-white font-mono text-4xl font-bold underline decoration-fuchsia-500">Score: {score}</p>
             </motion.div>
           )}
-          <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={startGame} className="px-12 py-5 bg-white text-black font-black text-2xl rounded-full transition-shadow shadow-[0_0_30px_rgba(255,255,255,0.4)] hover:shadow-[0_0_50px_rgba(255,255,255,0.8)]">
+          <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={startGame} className="px-12 py-5 bg-white text-black font-black text-2xl rounded-full transition-shadow shadow-[0_0_30px_rgba(255,255,255,0.4)] hover:shadow-[0_0_50px_rgba(255,255,255,0.8)]" aria-label={gameOver ? 'Restart Game' : 'Start Game'}>
             {gameOver ? 'RE-UP' : 'BEGIN TRIP'}
           </motion.button>
           <p className="mt-8 text-white/30 text-xs font-mono uppercase tracking-[0.2em]">"Get high with the ants"</p>
