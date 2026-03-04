@@ -1,20 +1,37 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Pinik Pipra (Insectiles)
 
-# Run and deploy your AI Studio app
+A psychedelic insect tile-matching falling game. Players tap the lowest insect before it reaches the bottom.
 
-This contains everything you need to run your app locally.
+## Game Features
 
-View your app in AI Studio: https://ai.studio/apps/bfadc2d5-53b8-48fa-bd54-6c8dfd22fd50
+- Psychedelic canvas-based visuals
+- Audio-reactive graphics (beat visualization)
+- Fever mode at 500 points
+- Multiple insect types with unique effects
+- High score tracking
+- Touch and mouse input support
 
-## Run Locally
+## Tech Stack
 
-**Prerequisites:**  Node.js
+- React 19
+- Vite
+- TypeScript
+- Tailwind CSS
+- Web Audio API
 
+## Getting Started
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+```bash
+# Install dependencies
+npm install
+
+# Run dev server
+npm run dev
+
+# Build for production
+npm run build
+```
+
+## License
+
+MIT
