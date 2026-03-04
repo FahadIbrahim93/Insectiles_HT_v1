@@ -53,6 +53,13 @@ export default function Game() {
   const [score, setScore] = useState(0);
   const [highScore, setHighScore] = useState(0);
 
+  useEffect(() => {
+    const saved = localStorage.getItem('pinik_pipra_highscore');
+    if (saved) {
+      setHighScore(parseInt(saved, 10));
+    }
+  }, []);
+
   // Game state refs for the animation loop
   const state = useRef({
     insects: [] as Insect[],
@@ -132,34 +139,21 @@ const startGame = async () => {
     setGameOver(true);
     state.current.isPlaying = false;
     state.current.gameOver = true;
-    setHighScore((prev) => Math.max(prev, state.current.score));
+    const newHighScore = Math.max(highScore, state.current.score);
+    setHighScore(newHighScore);
+    localStorage.setItem('pinik_pipra_highscore', newHighScore.toString());
   };
 
-  const handleInput = (clientX: number, clientY: number) => {
-    // Ensure audio context is resumed on any interaction
-    if (audio.ctx && audio.ctx.state === 'suspended') {
-      audio.ctx.resume();
-    }
-
+  const processTap = (clickedLane: number, x: number, y: number, isKeyboard: boolean) => {
     if (!state.current.isPlaying || state.current.gameOver) return;
 
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const rect = canvas.getBoundingClientRect();
-    const x = (clientX - rect.left) * (canvas.width / rect.width);
-    const y = (clientY - rect.top) * (canvas.height / rect.height);
-
-    // Debounce inputs but allow slightly faster tapping
-    const now = Date.now();
-    if (now - lastInputTime.current < 30) return;
-    lastInputTime.current = now;
-
     const laneWidth = canvas.width / LANES;
-    const clickedLane = Math.floor(x / laneWidth);
 
     // Hit detection with a bit of vertical tolerance for better mobile feel
-    const HIT_TOLERANCE = 100; 
+    const HIT_TOLERANCE = 100;
 
     // Find the lowest unscored insect in the clicked lane
     const targetInsect = state.current.insects
@@ -172,7 +166,8 @@ const startGame = async () => {
       .sort((a, b) => b.y - a.y)[0];
 
     // Check if the tap is within a reasonable vertical range of the lowest tile
-    const isWithinVerticalRange = targetInsect && Math.abs(y - targetInsect.y) < (200 + HIT_TOLERANCE);
+    // For keyboard, we bypass the vertical range check
+    const isWithinVerticalRange = isKeyboard || (targetInsect && Math.abs(y - targetInsect.y) < (200 + HIT_TOLERANCE));
 
     if (targetInsect && targetInsect === lowestOverall && isWithinVerticalRange) {
       state.current.psyEffects.push({
@@ -225,6 +220,32 @@ const startGame = async () => {
       // Missed tap or wrong order
       endGame();
     }
+  };
+
+  const handleInput = (clientX: number, clientY: number) => {
+    // Ensure audio context is resumed on any interaction
+    if (audio.ctx && audio.ctx.state === 'suspended') {
+      audio.ctx.resume();
+    }
+
+    if (!state.current.isPlaying || state.current.gameOver) return;
+
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const x = (clientX - rect.left) * (canvas.width / rect.width);
+    const y = (clientY - rect.top) * (canvas.height / rect.height);
+
+    // Debounce inputs but allow slightly faster tapping
+    const now = Date.now();
+    if (now - lastInputTime.current < 30) return;
+    lastInputTime.current = now;
+
+    const laneWidth = canvas.width / LANES;
+    const clickedLane = Math.floor(x / laneWidth);
+
+    processTap(clickedLane, x, y, false);
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -716,7 +737,32 @@ const startGame = async () => {
   }, []);
 
   useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!state.current.isPlaying || state.current.gameOver) return;
+
+      const key = e.key;
+      if (['1', '2', '3', '4'].includes(key)) {
+        const lane = parseInt(key) - 1;
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+
+        const laneWidth = canvas.width / LANES;
+        const x = lane * laneWidth + laneWidth / 2;
+
+        // Find the insect in this lane to get its Y position for effects
+        const targetInsect = state.current.insects
+          .filter((i) => i.lane === lane && !i.scored)
+          .sort((a, b) => b.y - a.y)[0];
+
+        const y = targetInsect ? targetInsect.y : 0;
+
+        processTap(lane, x, y, true);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
     return () => {
+      window.removeEventListener('keydown', handleKeyDown);
       if (requestRef.current) cancelAnimationFrame(requestRef.current);
     };
   }, []);
@@ -773,7 +819,8 @@ const startGame = async () => {
 
           <button
             onClick={startGame}
-            className="px-8 py-4 bg-[#8B5CF6] text-white font-bold text-xl rounded-full hover:scale-105 active:scale-95 transition-transform shadow-[0_0_20px_rgba(139,92,246,0.5)]"
+            aria-label={gameOver ? 'Play game again' : 'Start game'}
+            className="px-8 py-4 bg-[#8B5CF6] text-white font-bold text-xl rounded-full hover:scale-105 active:scale-95 transition-transform shadow-[0_0_20px_rgba(139,92,246,0.5)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#8B5CF6]/50"
           >
             {gameOver ? 'PLAY AGAIN' : 'START GAME'}
           </button>
