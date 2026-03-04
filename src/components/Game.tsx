@@ -722,19 +722,19 @@ const startGame = async () => {
   }, []);
 
   return (
-    <div ref={containerRef} className="relative w-full h-full sm:max-w-md sm:h-[90vh] mx-auto bg-black overflow-hidden shadow-2xl sm:rounded-2xl sm:border border-white/10">
+    <div ref={containerRef} className="relative w-full h-full sm:max-w-md sm:h-[90vh] mx-auto bg-[#0A0A0F] overflow-hidden shadow-2xl sm:rounded-2xl sm:border border-[#8B5CF6]/30">
       {/* Score Display */}
       <div className="absolute top-4 left-0 right-0 z-10 flex justify-between px-6 pointer-events-none">
         <div className="flex items-center gap-3">
           <img 
             src="/Pink_ant_mascot_game_sprite_3379ebd6e6.jpeg" 
             alt="Mascot" 
-            className="w-12 h-12 rounded-full border-2 border-white/30"
+            className="w-12 h-12 rounded-full border-2 border-[#8B5CF6]/30"
           />
           <div className="text-white font-mono text-2xl drop-shadow-md flex flex-col">
             <span>Score: {score}</span>
             {state.current.feverMode && (
-              <span className="text-fuchsia-400 animate-pulse text-xl font-bold">FEVER MODE!</span>
+              <span className="text-[#EC4899] animate-pulse text-xl font-bold">FEVER MODE!</span>
             )}
           </div>
         </div>
@@ -754,13 +754,13 @@ const startGame = async () => {
       {/* Start / Game Over Overlay */}
       {(!isPlaying || gameOver) && (
         <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm">
-          <h1 className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-500 via-cyan-500 to-yellow-500 mb-2 text-center drop-shadow-lg transform -skew-x-6">
+          <h1 className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#8B5CF6] via-[#EC4899] to-[#06B6D4] mb-2 text-center drop-shadow-lg transform -skew-x-6">
             INSECT<br/>TILES
           </h1>
           
           {gameOver && (
             <div className="mb-8 text-center animate-bounce">
-              <p className="text-red-500 font-mono text-xl mb-2">GAME OVER</p>
+              <p className="text-[#EC4899] font-mono text-xl mb-2">GAME OVER</p>
               <p className="text-white font-mono text-3xl">Score: {score}</p>
             </div>
           )}
@@ -773,7 +773,7 @@ const startGame = async () => {
 
           <button
             onClick={startGame}
-            className="px-8 py-4 bg-white text-black font-bold text-xl rounded-full hover:scale-105 active:scale-95 transition-transform shadow-[0_0_20px_rgba(255,255,255,0.5)]"
+            className="px-8 py-4 bg-[#8B5CF6] text-white font-bold text-xl rounded-full hover:scale-105 active:scale-95 transition-transform shadow-[0_0_20px_rgba(139,92,246,0.5)]"
           >
             {gameOver ? 'PLAY AGAIN' : 'START GAME'}
           </button>

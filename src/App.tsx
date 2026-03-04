@@ -7,7 +7,7 @@ import Game from './components/Game';
 
 export default function App() {
   return (
-    <div className="h-full w-full bg-zinc-950 flex items-center justify-center">
+    <div className="h-full w-full bg-[#0A0A0F] flex items-center justify-center">
       <Game />
     </div>
   );
