@@ -132,62 +132,31 @@ const startGame = async () => {
     setGameOver(true);
     state.current.isPlaying = false;
     state.current.gameOver = true;
-    setHighScore((prev) => Math.max(prev, state.current.score));
+    const finalScore = state.current.score;
+    setHighScore((prev) => {
+      const next = Math.max(prev, finalScore);
+      localStorage.setItem('pinik_pipra_highscore', next.toString());
+      return next;
+    });
   };
 
-  const handleInput = (clientX: number, clientY: number) => {
-    // Ensure audio context is resumed on any interaction
-    if (audio.ctx && audio.ctx.state === 'suspended') {
-      audio.ctx.resume();
-    }
-
+  const handleAction = (lane: number, y?: number, x?: number) => {
+    if (audio.ctx?.state === 'suspended') audio.ctx.resume();
     if (!state.current.isPlaying || state.current.gameOver) return;
-
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const rect = canvas.getBoundingClientRect();
-    const x = (clientX - rect.left) * (canvas.width / rect.width);
-    const y = (clientY - rect.top) * (canvas.height / rect.height);
-
-    // Debounce inputs but allow slightly faster tapping
     const now = Date.now();
     if (now - lastInputTime.current < 30) return;
     lastInputTime.current = now;
-
-    const laneWidth = canvas.width / LANES;
-    const clickedLane = Math.floor(x / laneWidth);
-
-    // Hit detection with a bit of vertical tolerance for better mobile feel
-    const HIT_TOLERANCE = 100; 
-
-    // Find the lowest unscored insect in the clicked lane
-    const targetInsect = state.current.insects
-      .filter((i) => i.lane === clickedLane && !i.scored)
-      .sort((a, b) => b.y - a.y)[0];
-
-    // Check if there's an insect lower in ANY other lane
-    const lowestOverall = state.current.insects
-      .filter((i) => !i.scored)
-      .sort((a, b) => b.y - a.y)[0];
-
-    // Check if the tap is within a reasonable vertical range of the lowest tile
-    const isWithinVerticalRange = targetInsect && Math.abs(y - targetInsect.y) < (200 + HIT_TOLERANCE);
-
-    if (targetInsect && targetInsect === lowestOverall && isWithinVerticalRange) {
+    const targetInsect = state.current.insects.filter(i => i.lane === lane && !i.scored).sort((a, b) => b.y - a.y)[0];
+    const lowestOverall = state.current.insects.filter(i => !i.scored).sort((a, b) => b.y - a.y)[0];
+    const isWithinRange = !targetInsect || y === undefined || Math.abs(y - targetInsect.y) < 300;
+    if (targetInsect && targetInsect === lowestOverall && isWithinRange) {
       state.current.psyEffects.push({
-        x,
-        y,
-        life: 0,
-        maxLife: 30,
-        hue: (state.current.hue + 180) % 360,
-        type: 'kaleidoscope'
+        x: x ?? (lane + 0.5) * (canvasRef.current?.width || 0) / LANES,
+        y: y ?? targetInsect.y,
+        life: 0, maxLife: 30, hue: (state.current.hue + 180) % 360, type: 'kaleidoscope'
       });
-
-      // Valid tap
       targetInsect.scored = true;
       const isSpecial = targetInsect.def.type === 'ladybug';
-      
       setScore((s) => {
         const prevScore = s;
         const newScore = s + (isSpecial ? 2 : 1);
@@ -214,31 +183,32 @@ const startGame = async () => {
       const randomType = effectTypes[Math.floor(Math.random() * effectTypes.length)];
       
       state.current.psyEffects.push({
-        x: clickedLane * laneWidth + laneWidth / 2,
+        x: (lane + 0.5) * (canvasRef.current?.width || 0) / LANES,
         y: targetInsect.y + 40,
-        life: 0,
-        maxLife: 60,
-        hue: state.current.hue,
-        type: randomType
+        life: 0, maxLife: 60, hue: state.current.hue, type: randomType
       });
     } else {
-      // Missed tap or wrong order
       endGame();
     }
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    handleInput(e.clientX, e.clientY);
+    const rect = canvasRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const x = (e.clientX - rect.left) * (canvasRef.current!.width / rect.width);
+    const y = (e.clientY - rect.top) * (canvasRef.current!.height / rect.height);
+    handleAction(Math.floor(x / (canvasRef.current!.width / LANES)), y, x);
   };
 
   const handleTouchStart = (e: React.TouchEvent) => {
-    // Only process if we have touches
     if (e.touches.length > 0) {
-      // Prevent default to stop ghost clicks and scrolling
       if (e.cancelable) e.preventDefault();
-      
-      const touch = e.touches[0];
-      handleInput(touch.clientX, touch.clientY);
+      const t = e.touches[0];
+      const rect = canvasRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const x = (t.clientX - rect.left) * (canvasRef.current!.width / rect.width);
+      const y = (t.clientY - rect.top) * (canvasRef.current!.height / rect.height);
+      handleAction(Math.floor(x / (canvasRef.current!.width / LANES)), y, x);
     }
   };
 
@@ -685,6 +655,16 @@ const startGame = async () => {
   };
 
   useEffect(() => {
+    const saved = localStorage.getItem('pinik_pipra_highscore');
+    if (saved) setHighScore(parseInt(saved, 10));
+    const onKey = (e: KeyboardEvent) => {
+      if (['1', '2', '3', '4'].includes(e.key)) {
+        updateRef.current = update; // Ensure updateRef is current (though usually it is)
+        handleAction(parseInt(e.key) - 1);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+
     offscreenCanvas.current = document.createElement('canvas');
     offscreenCanvas.current.width = 100;
     offscreenCanvas.current.height = 100;
@@ -711,7 +691,10 @@ const startGame = async () => {
         ctx.fillRect(0, 0, canvas.width, canvas.height);
       }
 
-      return () => window.removeEventListener('resize', resize);
+      return () => {
+        window.removeEventListener('resize', resize);
+        window.removeEventListener('keydown', onKey);
+      };
     }
   }, []);
 
@@ -773,7 +756,8 @@ const startGame = async () => {
 
           <button
             onClick={startGame}
-            className="px-8 py-4 bg-[#8B5CF6] text-white font-bold text-xl rounded-full hover:scale-105 active:scale-95 transition-transform shadow-[0_0_20px_rgba(139,92,246,0.5)]"
+            aria-label={gameOver ? "Restart game" : "Start game"}
+            className="px-8 py-4 bg-[#8B5CF6] text-white font-bold text-xl rounded-full hover:scale-105 active:scale-95 transition-transform shadow-[0_0_20px_rgba(139,92,246,0.5)] focus-visible:ring-4 focus-visible:ring-[#EC4899] outline-none"
           >
             {gameOver ? 'PLAY AGAIN' : 'START GAME'}
           </button>
