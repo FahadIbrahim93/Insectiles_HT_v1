@@ -74,3 +74,12 @@ This project uses an **Autonomous Multi-Agent System** where:
 ---
 
 **Autonomous agents, execute!**
+
+### 2026-03-05: Universal Workflow Pinboard Remediation
+**Decision**: Reworked `UNIVERSAL_WORKFLOW_PINBOARD.md` into a project-specific executable playbook
+**Details**:
+- Added numbered deep-planning section with concrete constraints, edge cases, and unknowns.
+- Added scrutiny scoring table with justifications and targeted remediations.
+- Added autonomous completion sweep table and closeout statement requirements.
+- Added hardening evidence format and zero-issues closure loop.
+- Added current sweep closeout table with blocker and open question tracking.
