@@ -32,6 +32,7 @@ interface Insect {
   def: InsectDef;
   speed: number;
   scored: boolean;
+  sprite?: HTMLImageElement;
 }
 
 interface PsyEffect {
@@ -69,6 +70,7 @@ export default function Game() {
     score: 0,
     feverMode: false,
     feverFramesLeft: 0,
+    bgImage: null as HTMLImageElement | null,
   });
 
   const requestRef = useRef<number | undefined>(undefined);
@@ -82,6 +84,11 @@ export default function Game() {
     const lane = Math.floor(Math.random() * LANES);
     const isFever = state.current.feverMode;
     const def = isFever ? SPECIAL_INSECT_DEF : INSECT_DEFS[Math.floor(Math.random() * INSECT_DEFS.length)];
+
+    // Resolve and cache sprite at spawn time
+    const spritePath = def.sprites ? def.sprites[def.spriteIndex % def.sprites.length] : null;
+    const sprite = spritePath ? assetLoader.get(spritePath) : undefined;
+
     state.current.insects.push({
       id: state.current.insectIdCounter++,
       lane,
@@ -89,6 +96,7 @@ export default function Game() {
       def,
       speed: state.current.speed,
       scored: false,
+      sprite: sprite,
     });
   };
 
@@ -99,6 +107,10 @@ const startGame = async () => {
     setIsPlaying(true);
     setGameOver(false);
     setScore(0);
+
+    const bgPath = assetLoader.getRandomFromCategory('backgrounds');
+    const bgImage = bgPath ? assetLoader.get(bgPath) : null;
+
     state.current = {
       insects: [],
       psyEffects: [],
@@ -114,6 +126,7 @@ const startGame = async () => {
       score: 0,
       feverMode: false,
       feverFramesLeft: 0,
+      bgImage: bgImage || null,
     };
     // Spawn first insect immediately
     spawnInsect();
@@ -345,28 +358,27 @@ const startGame = async () => {
     const dynamicSaturation = 50 + (intensity * 30) + ((bassEnergy / 255) * 20);
     const dynamicLightness = 5 + (intensity * 10) + ((bassEnergy / 255) * 15);
 
-    // Create a color-shifting gradient background
-    const bgGradient = ctx.createLinearGradient(
-      canvas.width / 2 + Math.cos(state.current.frames * 0.005) * canvas.width,
-      canvas.height / 2 + Math.sin(state.current.frames * 0.005) * canvas.height,
-      canvas.width / 2 - Math.cos(state.current.frames * 0.005) * canvas.width,
-      canvas.height / 2 - Math.sin(state.current.frames * 0.005) * canvas.height
-    );
-    
-    bgGradient.addColorStop(0, `hsla(${state.current.hue}, ${dynamicSaturation}%, ${dynamicLightness}%, 1)`);
-    bgGradient.addColorStop(0.5, `hsla(${(state.current.hue + 60 * intensity) % 360}, ${dynamicSaturation}%, ${dynamicLightness * 0.8}%, 1)`);
-    bgGradient.addColorStop(1, `hsla(${(state.current.hue + 120 * intensity + (bassEnergy / 255) * 60) % 360}, ${dynamicSaturation}%, ${dynamicLightness * 1.2}%, 1)`);
-
     // Clear with psychedelic trail effect
     ctx.globalAlpha = isFever ? 0.1 : 0.3;
     
-    // Try to use background image, fall back to gradient
-    const bgPath = assetLoader.getRandomFromCategory('backgrounds');
-    const bgImage = bgPath ? assetLoader.get(bgPath) : null;
+    // Use cached background image, fall back to dynamic gradient
+    const bgImage = state.current.bgImage;
     
     if (bgImage && bgImage.complete) {
       ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
     } else {
+      // Create a color-shifting gradient background only if image fallback is needed
+      const bgGradient = ctx.createLinearGradient(
+        canvas.width / 2 + Math.cos(state.current.frames * 0.005) * canvas.width,
+        canvas.height / 2 + Math.sin(state.current.frames * 0.005) * canvas.height,
+        canvas.width / 2 - Math.cos(state.current.frames * 0.005) * canvas.width,
+        canvas.height / 2 - Math.sin(state.current.frames * 0.005) * canvas.height
+      );
+
+      bgGradient.addColorStop(0, `hsla(${state.current.hue}, ${dynamicSaturation}%, ${dynamicLightness}%, 1)`);
+      bgGradient.addColorStop(0.5, `hsla(${(state.current.hue + 60 * intensity) % 360}, ${dynamicSaturation}%, ${dynamicLightness * 0.8}%, 1)`);
+      bgGradient.addColorStop(1, `hsla(${(state.current.hue + 120 * intensity + (bassEnergy / 255) * 60) % 360}, ${dynamicSaturation}%, ${dynamicLightness * 1.2}%, 1)`);
+
       ctx.fillStyle = bgGradient;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
@@ -494,11 +506,11 @@ const startGame = async () => {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     
-    // Add some glow to insects
-    ctx.shadowBlur = 20;
+    // Optimization: Only apply shadowBlur during fever or high intensity music
+    ctx.shadowBlur = (isFever || intensity > 0.8) ? 20 : 0;
     ctx.shadowColor = `hsl(${state.current.hue}, 100%, 50%)`;
 
-    state.current.insects.forEach((insect) => {
+    for (const insect of state.current.insects) {
       if (!insect.scored) {
         const tileHeight = 200;
         const wave = Math.sin(insect.y * 0.01 + state.current.frames * 0.1) * ((isFever ? 30 : 10) * intensity);
@@ -525,9 +537,8 @@ const startGame = async () => {
         
         const def = insect.def;
         
-        // Try to use sprite, fall back to emoji
-        const spritePath = def.sprites ? def.sprites[def.spriteIndex % def.sprites.length] : null;
-        const sprite = spritePath ? assetLoader.get(spritePath) : null;
+        // Use cached sprite reference
+        const sprite = insect.sprite;
         
         if (sprite && sprite.complete) {
           ctx.drawImage(sprite, -40, -40, 80, 80);
@@ -575,12 +586,12 @@ const startGame = async () => {
         
         ctx.restore();
       }
-    });
+    }
 
     ctx.shadowBlur = 0; // Reset shadow
 
     // Draw psyEffects
-    state.current.psyEffects.forEach((p) => {
+    for (const p of state.current.psyEffects) {
       const progress = p.life / p.maxLife;
       const scale = progress * 10;
       const alpha = 1 - progress;
@@ -670,7 +681,7 @@ const startGame = async () => {
       }
       
       ctx.restore();
-    });
+    }
 
     // Flash effect
     if (state.current.flash > 0) {
