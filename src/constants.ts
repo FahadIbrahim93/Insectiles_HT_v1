@@ -12,6 +12,12 @@ export const ASSET_PATHS = {
     ANT_MASCOT_2: '/assets/images/Pink_ant_mascot_game_sprite_3379ebd6e6.jpeg',
     ANT_MASCOT_3: '/assets/images/Pink_ant_mascot_game_sprite_49f52b4e1d.jpeg',
     ANT_MASCOT_4: '/assets/images/Pink_ant_mascot_game_sprite_c415249f25.jpeg',
+    // New bug assets
+    BUG_1: '/assets/images/bug-1.png',
+    BUG_2: '/assets/images/bug-2.png',
+    BUG_3: '/assets/images/bug-3.png',
+    BUG_4: '/assets/images/bug-4.png',
+    BUG_1_MULTIVIEW: '/assets/images/bug-1-multiview.png',
   },
   ANIMATIONS: {
     IDLE_1: '/assets/animations/Pinik_pipra_idle_animation_9bcd48c96f.mp4',

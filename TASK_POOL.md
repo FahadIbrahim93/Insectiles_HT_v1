@@ -59,7 +59,11 @@
 
 | ID | Task | Agent | Completed | Notes |
 |----|------|-------|-----------|-------|
-| - | Initial setup | CODEX | 2026-03-05 | System established |
+| INF-001 | Extract GameEngine module from Game.tsx | CODEX | 2026-03-07 | Separated loop orchestration into dedicated engine class (200+ LOC) |
+| INF-002 | Add Playwright E2E test suite | CODEX | 2026-03-07 | Created 9 tests covering start/restart/fever/game-over, added test IDs |
+| INF-003 | Integrate new bug assets (bug-1-4, multiview) | CODEX | 2026-03-07 | Added 5 PNG assets to constants.ts and copied to public folder |
+| INF-004 | Update package.json for Playwright | CODEX | 2026-03-07 | Added test:e2e, test:e2e:ui, test:e2e:debug scripts |
+| OPS-001 | Code quality verification | CODEX | 2026-03-07 | Build & 20 unit tests passing, strict TypeScript |
 
 ---
 
