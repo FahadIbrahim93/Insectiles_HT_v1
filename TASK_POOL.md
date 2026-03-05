@@ -64,6 +64,7 @@
 | INF-003 | Integrate new bug assets (bug-1-4, multiview) | CODEX | 2026-03-07 | Added 5 PNG assets to constants.ts and copied to public folder |
 | INF-004 | Update package.json for Playwright | CODEX | 2026-03-07 | Added test:e2e, test:e2e:ui, test:e2e:debug scripts |
 | OPS-001 | Code quality verification | CODEX | 2026-03-07 | Build & 20 unit tests passing, strict TypeScript |
+| INF-005 | Upgrade Universal Workflow Pinboard to project-specific executable playbook | CODEX | 2026-03-05 | Replaced generic template with complete plan, scrutiny, sweep, hardening, and closure artifacts |
 
 ---
 
