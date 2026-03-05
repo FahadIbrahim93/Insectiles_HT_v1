@@ -74,3 +74,35 @@ This project uses an **Autonomous Multi-Agent System** where:
 ---
 
 **Autonomous agents, execute!**
+
+### 2026-03-05: Universal Workflow Pinboard Remediation
+**Decision**: Reworked `UNIVERSAL_WORKFLOW_PINBOARD.md` into a project-specific executable playbook
+**Details**:
+- Added numbered deep-planning section with concrete constraints, edge cases, and unknowns.
+- Added scrutiny scoring table with justifications and targeted remediations.
+- Added autonomous completion sweep table and closeout statement requirements.
+- Added hardening evidence format and zero-issues closure loop.
+- Added current sweep closeout table with blocker and open question tracking.
+
+### 2026-03-05: Gameplay feature completion sweep (001-010)
+**Decision**: Completed all open P2/P3 tasks in TASK_POOL with production implementation
+**Details**:
+- Implemented swipe touch controls, combo multiplier, particle bursts, and shield/slow-mo powerups.
+- Added leaderboard UI and persisted game meta state for save/load continuity.
+- Added HUD sound toggle and wired audio mute behavior.
+- Improved loading animation and added retina canvas rendering support.
+- Optimized bundle loading by lazy-loading `Game` through React Suspense.
+
+### 2026-03-05: Post-sweep stabilization
+**Decision**: Hardened production sweep by fixing high-DPR canvas behavior and lint gate reliability
+**Details**:
+- Removed incorrect DPR transform that could over-scale render coordinates on retina screens.
+- Enforced sound toggle for power-up SFX path for consistent mute behavior.
+- Added `tsconfig.lint.json` and updated lint script to avoid external E2E/Vitest dependency failures in baseline lint gate.
+
+### 2026-03-05: Workflow policy decisions ratified
+**Decision**: Applied affirmative policy decisions for execution governance
+**Details**:
+- Adopted `EXECUTION_REPORT.md` as single-source verification report.
+- Made UTC started/completed timestamps mandatory in task operations.
+- Promoted `npm run test` to mandatory pre-commit gate with lint/build.

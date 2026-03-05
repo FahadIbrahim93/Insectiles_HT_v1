@@ -21,21 +21,21 @@
 
 | ID | Task | Type | Agent | Status |
 |----|------|------|-------|--------|
-| 001 | Add mobile touch controls for swiping insects | Frontend | OPEN | OPEN |
-| 002 | Implement combo multiplier system | Backend | OPEN | OPEN |
-| 003 | Add particle explosion effects on catch | Frontend | OPEN | OPEN |
-| 004 | Create power-up system (shield, slow-mo) | Backend | OPEN | OPEN |
-| 005 | Add leaderboard UI | Frontend | OPEN | OPEN |
-| 006 | Implement save/load game state | Backend | OPEN | OPEN |
+| 001 | Add mobile touch controls for swiping insects | Frontend | CODEX | DONE |
+| 002 | Implement combo multiplier system | Backend | CODEX | DONE |
+| 003 | Add particle explosion effects on catch | Frontend | CODEX | DONE |
+| 004 | Create power-up system (shield, slow-mo) | Backend | CODEX | DONE |
+| 005 | Add leaderboard UI | Frontend | CODEX | DONE |
+| 006 | Implement save/load game state | Backend | CODEX | DONE |
 
 ### P3: Polish
 
 | ID | Task | Type | Agent | Status |
 |----|------|------|-------|--------|
-| 007 | Add sound toggle button | Frontend | OPEN | OPEN |
-| 008 | Improve loading screen animation | Frontend | OPEN | OPEN |
-| 009 | Add retina display support | Frontend | OPEN | OPEN |
-| 010 | Optimize bundle size | Backend | OPEN | OPEN |
+| 007 | Add sound toggle button | Frontend | CODEX | DONE |
+| 008 | Improve loading screen animation | Frontend | CODEX | DONE |
+| 009 | Add retina display support | Frontend | CODEX | DONE |
+| 010 | Optimize bundle size | Backend | CODEX | DONE |
 
 ---
 
@@ -64,6 +64,18 @@
 | INF-003 | Integrate new bug assets (bug-1-4, multiview) | CODEX | 2026-03-07 | Added 5 PNG assets to constants.ts and copied to public folder |
 | INF-004 | Update package.json for Playwright | CODEX | 2026-03-07 | Added test:e2e, test:e2e:ui, test:e2e:debug scripts |
 | OPS-001 | Code quality verification | CODEX | 2026-03-07 | Build & 20 unit tests passing, strict TypeScript |
+| INF-005 | Upgrade Universal Workflow Pinboard to project-specific executable playbook | CODEX | 2026-03-05 | Replaced generic template with complete plan, scrutiny, sweep, hardening, and closure artifacts |
+| 001 | Add mobile touch controls for swiping insects | CODEX | 2026-03-05 | Added swipe lane detection via touchmove with de-dup lane tracking |
+| 002 | Implement combo multiplier system | CODEX | 2026-03-05 | Added streak-based combo multiplier (x1..x5) and HUD display |
+| 003 | Add particle explosion effects on catch | CODEX | 2026-03-05 | Added canvas particle burst effect for hits and power-up pickups |
+| 004 | Create power-up system (shield, slow-mo) | CODEX | 2026-03-05 | Added falling powerups with shield consume and slow-mo timer |
+| 005 | Add leaderboard UI | CODEX | 2026-03-05 | Added top-5 leaderboard panel in overlay with persisted scores |
+| 006 | Implement save/load game state | CODEX | 2026-03-05 | Added persistent game meta state (high score/leaderboard/sound) |
+| 007 | Add sound toggle button | CODEX | 2026-03-05 | Added HUD sound toggle and audio mute integration |
+| 008 | Improve loading screen animation | CODEX | 2026-03-05 | Added spinner + animated gradient loading treatment |
+| 009 | Add retina display support | CODEX | 2026-03-05 | Added DPR-aware canvas sizing + transform scaling |
+| 010 | Optimize bundle size | CODEX | 2026-03-05 | Added lazy-loaded Game component via React Suspense |
+| INF-006 | Stabilize lint gate and fix runtime regressions after gameplay sweep | CODEX | 2026-03-05 | Added lint-specific tsconfig, fixed DPR canvas scaling, and respected sound toggle for power-up SFX |
 
 ---
 
@@ -77,13 +89,14 @@
 
 ### Update Progress
 - Edit this file with your updates
-- Include timestamp when starting
-- Include notes if needed
+- Include **UTC timestamp** when starting (required)
+- Include owner, dependencies, and notes as needed
 
 ### Mark Complete
 1. Change status to DONE
-2. Add completion date
-3. Move to Completed section
+2. Add completion date/time in UTC (required)
+3. Add proof link/location in notes (required)
+4. Move to Completed section
 
 ---
 

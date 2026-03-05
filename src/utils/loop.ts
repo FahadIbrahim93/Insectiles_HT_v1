@@ -28,13 +28,14 @@ export const moveInsects = <T extends FallingInsect>(
   insects: T[],
   canvasHeight: number,
   isFeverMode: boolean,
-  tileHeight: number
+  tileHeight: number,
+  speedMultiplier = 1
 ): { insects: T[]; reachedBottom: boolean } => {
   let reachedBottom = false;
   const moved: T[] = [];
 
   for (const insect of insects) {
-    const nextY = insect.y + insect.speed;
+    const nextY = insect.y + insect.speed * speedMultiplier;
 
     if (nextY > canvasHeight) {
       if (!isFeverMode) {
