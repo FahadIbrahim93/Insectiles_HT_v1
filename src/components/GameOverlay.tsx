@@ -34,7 +34,7 @@ export default function GameOverlay({ isPlaying, gameOver, score, leaderboard, s
         aria-label={gameOver ? 'Restart game' : 'Start game'}
         className="px-12 py-5 bg-white text-black font-black text-2xl rounded-full transition-shadow shadow-[0_0_30px_rgba(255,255,255,0.4)] hover:shadow-[0_0_50px_rgba(255,255,255,0.8)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-cyan-400"
       >
-        {gameOver ? 'RE-UP' : 'BEGIN TRIP'}
+        {gameOver ? 'START' : 'START'}
       </button>
 
       {leaderboard.length > 0 && (
