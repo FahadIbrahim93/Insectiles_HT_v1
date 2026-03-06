@@ -39,6 +39,7 @@ export default function Game() {
   } = useGameStore();
 
   const [assetsLoaded, setAssetsLoaded] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(false);
   const imagesRef = useRef<HTMLImageElement[]>([]);
 
   const stopLoop = () => {
@@ -49,16 +50,10 @@ export default function Game() {
   useEffect(() => {
     const load = async () => {
       try {
-        console.log('[Game] Starting asset load...');
         const { images } = await preloadAssets(
           Object.values(ASSET_PATHS.IMAGES),
           Object.values(ASSET_PATHS.ANIMATIONS)
         );
-        console.log('[Game] Assets loaded. Total images:', images.length);
-        // Log first few images to verify
-        images.forEach((img, idx) => {
-          console.log(`[Game] Image ${idx}: ${img.src} (${img.width}x${img.height})`);
-        });
         imagesRef.current = images;
         setAssetsLoaded(true);
       } catch (error) {
@@ -75,6 +70,19 @@ export default function Game() {
       audio.stopBgm();
     }
   }, [soundEnabled]);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const update = () => setReducedMotion(mediaQuery.matches);
+    update();
+    mediaQuery.addEventListener('change', update);
+    return () => mediaQuery.removeEventListener('change', update);
+  }, []);
+
+  const triggerHaptic = (pattern: number | number[] = 16) => {
+    if (typeof navigator === 'undefined' || typeof navigator.vibrate !== 'function') return;
+    navigator.vibrate(pattern);
+  };
 
   const startGame = () => {
     audio.init();
@@ -116,8 +124,10 @@ export default function Game() {
         activateShield,
         activateSlowMo,
         playFeverActivation: () => audio.playFeverActivation(),
-        playTapSound: (isFever: boolean) => audio.playTapSound(isFever),
+        playTapSound: (lane: number, isFever: boolean) => audio.playTapSound(lane, isFever),
         playErrorSound: () => audio.playErrorSound(),
+        triggerHaptic,
+        getReducedMotion: () => reducedMotion,
         stopBgm: () => audio.stopBgm(),
       }
     );
@@ -220,6 +230,7 @@ export default function Game() {
         data-testid="game-canvas"
         ref={canvasRef}
         className="block w-full h-full touch-none"
+        data-reduced-motion={reducedMotion}
         onMouseDown={(e) => handleInteraction(e.clientX)}
         onTouchStart={(e) => {
           lastSwipeLaneRef.current = null;
