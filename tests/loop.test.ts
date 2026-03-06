@@ -3,9 +3,9 @@ import assert from 'node:assert/strict';
 import { advancePsyEffects, moveInsects, updateScreenShake } from '../src/utils/loop';
 
 test('updateScreenShake decays shake and applies fever pulse', () => {
-  assert.equal(updateScreenShake(10, false, 1), 9);
-  assert.equal(updateScreenShake(0, true, 10), 10);
-  assert.equal(updateScreenShake(5, true, 11), 4.5);
+  assert.equal(updateScreenShake(10, false, 1), 8.5);
+  assert.equal(updateScreenShake(0, true, 8), 18);
+  assert.equal(updateScreenShake(5, true, 11), 4.25);
 });
 
 test('advancePsyEffects increments life and removes expired effects', () => {

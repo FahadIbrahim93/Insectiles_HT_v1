@@ -68,10 +68,10 @@ test('advancePsyEffects handles empty array', () => {
 
 test('updateScreenShake decays shake and applies fever pulse', () => {
   let shake = updateScreenShake(10, false, 60);
-  assert.equal(shake, 9); // decay by 1
+  assert.equal(shake, 8.5); // decay by 1
 
-  shake = updateScreenShake(0, true, 10); // frames % 10 === 0
-  assert.equal(shake, 10); // fever pulse applies
+  shake = updateScreenShake(0, true, 8); // frames % 10 === 0
+  assert.equal(shake, 18); // fever pulse applies
 });
 
 test('updateScreenShake clamps negative to zero', () => {

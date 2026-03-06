@@ -1,3 +1,9 @@
+export interface LeaderboardEntry {
+  score: number;
+  timestamp: number;
+  name?: string;
+}
+
 export interface Insect {
   id: number;
   lane: number;
@@ -22,11 +28,13 @@ export interface GameState {
   isPlaying: boolean;
   isFeverMode: boolean;
   feverProgress: number;
+  leaderboard: LeaderboardEntry[];
   addScore: (points: number) => void;
   setGameOver: (status: boolean) => void;
   startGame: () => void;
   resetGame: () => void;
   setFeverMode: (status: boolean) => void;
+  addLeaderboardScore: (score: number) => void;
 }
 
 export interface AssetPaths {

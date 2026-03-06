@@ -10,17 +10,18 @@ export interface PsyEffectLike {
 
 export const updateScreenShake = (currentShake: number, isFeverMode: boolean, frames: number): number => {
   let nextShake = currentShake;
-  if (nextShake > 0) nextShake *= 0.9;
-  if (nextShake < 0) nextShake = 0; // clamp to non-negative
-  if (isFeverMode && frames % 10 === 0) nextShake = 10;
+  if (nextShake > 0) nextShake *= 0.85;
+  if (nextShake < 0.1) nextShake = 0;
+  if (isFeverMode && frames % 8 === 0) nextShake = 18;
   return nextShake;
 };
 
 export const advancePsyEffects = <T extends PsyEffectLike>(effects: T[]): T[] => {
   const next: T[] = [];
   for (const effect of effects) {
-    const updated = { ...effect, life: effect.life + 1 };
-    if (updated.life < updated.maxLife) next.push(updated as T);
+    if (effect.life + 1 < effect.maxLife) {
+      next.push({ ...effect, life: effect.life + 1 });
+    }
   }
   return next;
 };
@@ -41,14 +42,13 @@ export const moveInsects = <T extends FallingInsect>(
     if (nextY > canvasHeight) {
       if (!isFeverMode) {
         reachedBottom = true;
-        moved.push({ ...insect, y: nextY } as T);
-        continue;
+        moved.push({ ...insect, y: nextY });
+      } else {
+        moved.push({ ...insect, y: -tileHeight });
       }
-      moved.push({ ...insect, y: -tileHeight } as T);
-      continue;
+    } else {
+      moved.push({ ...insect, y: nextY });
     }
-
-    moved.push({ ...insect, y: nextY } as T);
   }
 
   return { insects: moved, reachedBottom };

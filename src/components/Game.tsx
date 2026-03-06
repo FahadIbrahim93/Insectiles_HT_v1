@@ -9,6 +9,7 @@ import { logger } from '../utils/logger';
 import { PerfSampler, type PerfSnapshot } from '../utils/perfSampler';
 import { safeStorage } from '../utils/safeStorage';
 import { isEnabledFlag } from '../utils/flags';
+if (typeof window !== "undefined") { (window as any).useGameStore = useGameStore; }
 import GameHud from './GameHud';
 import GameOverlay from './GameOverlay';
 
@@ -44,6 +45,7 @@ export default function Game() {
   const [assetsLoaded, setAssetsLoaded] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
   const [perfSnapshot, setPerfSnapshot] = useState<PerfSnapshot | null>(null);
+  const [hudPulse, setHudPulse] = useState(false);
   const imagesRef = useRef<HTMLImageElement[]>([]);
   const perfSamplerRef = useRef(new PerfSampler());
   const perfUpdateCounterRef = useRef(0);
@@ -153,6 +155,10 @@ export default function Game() {
         triggerHaptic,
         getReducedMotion: () => reducedMotion,
         stopBgm: () => audio.stopBgm(),
+        onMultiplierIncrease: (multiplier: number) => {
+          setHudPulse(true);
+          setTimeout(() => setHudPulse(false), 300);
+        },
         onFrame: (timestamp) => {
           if (!showPerfHud || !isMountedRef.current) return;
           const snapshot = perfSamplerRef.current.sample(timestamp);
@@ -264,6 +270,7 @@ export default function Game() {
         soundEnabled={soundEnabled}
         onToggleSound={toggleSound}
         perfSnapshot={perfSnapshot}
+        hudPulse={hudPulse}
         showPerfHud={showPerfHud}
       />
 
