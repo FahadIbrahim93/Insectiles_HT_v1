@@ -18,6 +18,10 @@ export class AudioEngine {
   noteIndex = 0;
   muted = false;
 
+  private getWindowRef(): (Window & typeof globalThis) | undefined {
+    return typeof window !== "undefined" ? window : undefined;
+  }
+
   setMuted(muted: boolean) {
     this.muted = muted;
     if (this.masterGain) {
@@ -27,7 +31,8 @@ export class AudioEngine {
 
   init() {
     if (this.ctx) return;
-    const AudioContextCtor = window.AudioContext ?? ((window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext);
+    const win = this.getWindowRef();
+    const AudioContextCtor = win?.AudioContext ?? (win as Window & { webkitAudioContext?: typeof AudioContext } | undefined)?.webkitAudioContext;
     if (!AudioContextCtor) return;
     this.ctx = new AudioContextCtor();
     this.masterGain = this.ctx.createGain();
@@ -184,7 +189,8 @@ export class AudioEngine {
       this.scheduleNote(this.current16thNote, this.nextNoteTime);
       this.nextNote();
     }
-    this.timerID = window.setTimeout(() => this.scheduler(), this.lookahead);
+    const win = this.getWindowRef();
+    this.timerID = (win?.setTimeout ?? globalThis.setTimeout)(() => this.scheduler(), this.lookahead) as unknown as number;
   }
 
   playBgm() {
@@ -202,7 +208,11 @@ export class AudioEngine {
 
   stopBgm() {
     this.isPlaying = false;
-    if (this.timerID !== null) { window.clearTimeout(this.timerID); this.timerID = null; }
+    if (this.timerID !== null) {
+      const win = this.getWindowRef();
+      (win?.clearTimeout ?? globalThis.clearTimeout)(this.timerID);
+      this.timerID = null;
+    }
   }
 
   playTapSound(lane = 0, isFever = false) {

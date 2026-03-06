@@ -278,6 +278,53 @@ test('scheduler schedules notes until lookahead horizon and stores timer id', ()
   assert.equal(timeoutDelay, 33);
 });
 
+
+
+test('stopBgm uses global clearTimeout fallback when window is unavailable', () => {
+  const audio = new AudioEngine();
+  audio.isPlaying = true;
+
+  const originalClearTimeout = globalThis.clearTimeout;
+  let cleared = false;
+  globalThis.clearTimeout = ((id: number) => {
+    cleared = id === 99;
+  }) as unknown as typeof globalThis.clearTimeout;
+
+  (globalThis as { window?: unknown }).window = undefined;
+  audio.timerID = 99;
+  audio.stopBgm();
+
+  globalThis.clearTimeout = originalClearTimeout;
+  assert.equal(cleared, true);
+  assert.equal(audio.timerID, null);
+});
+
+test('scheduler uses global setTimeout fallback when window is unavailable', () => {
+  const audio = new AudioEngine();
+  const { ctx } = createMockAudioContext();
+  ctx.currentTime = 5;
+  audio.ctx = ctx as unknown as AudioContext;
+  audio.nextNoteTime = 4.95;
+  audio.scheduleAheadTime = 0.1;
+
+  const originalSetTimeout = globalThis.setTimeout;
+  let usedFallback = false;
+  globalThis.setTimeout = ((cb: () => void, _delay?: number) => {
+    usedFallback = true;
+    void cb;
+    return 777;
+  }) as unknown as typeof globalThis.setTimeout;
+
+  (globalThis as { window?: unknown }).window = undefined;
+  audio.scheduleNote = () => undefined;
+
+  audio.scheduler();
+
+  globalThis.setTimeout = originalSetTimeout;
+  assert.equal(usedFallback, true);
+  assert.equal(audio.timerID, 777);
+});
+
 test('playBgm does not start when muted', () => {
   const audio = new AudioEngine();
   const { ctx } = createMockAudioContext();
