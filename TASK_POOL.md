@@ -74,7 +74,7 @@
 
 | ID | Task | Agent | Blocker Reason |
 |----|------|-------|----------------|
-| OPS-003 | Execute ordered merge of PRs #3,#5,#13,#11,#10,#7,#2,#6,#4 | CODEX | GitHub network/CLI unavailable in current container (`gh` missing, HTTPS 403); execute from network-enabled workstation |
+| - | - | - | No blocked tasks |
 
 ---
 
@@ -118,7 +118,14 @@
 | INF-016 | Harden perf telemetry lifecycle & flags | CODEX | 2026-03-07 | Restricted sampling to active play frames, added unmount guard, and expanded debug flag parsing (`1/true`) |
 | INF-017 | Add resilient storage fallback layer | CODEX | 2026-03-07 | Added safeStorage memory fallback and integrated store/debug reads to survive localStorage failures/privacy mode |
 | INF-018 | Normalize debug-flag parsing & storage reads | CODEX | 2026-03-07 | Added reusable flag parser (`1/true/yes/on`), improved fallback precedence, and expanded regression tests |
+| INF-019 | Replace stale workflow pinboard with execution-backed completion board | CODEX | 2026-03-06 | Rewrote `UNIVERSAL_WORKFLOW_PINBOARD.md`, added `EXECUTION_TASKBOARD.md`, and aligned `TASKS.md` release items with explicit external blockers |
+| INF-020 | Fix audio bar progression bug and expand edge-case tests | CODEX | 2026-03-06 | Added `total16thNotes` to `AudioEngine` so section/bar logic advances correctly; added 3 regression tests for wraparound, playBgm reset, and bar-based arrangement progression |
+| INF-021 | Sync completion artifacts with latest verification snapshot | CODEX | 2026-03-06 | Updated workflow/taskboard/sweep docs to reflect 70/70 tests and 84.89% coverage from latest autonomous verification run |
+| INF-022 | Expand AudioEngine edge-case test coverage for scheduler and section logic | CODEX | 2026-03-06 | Added 7 additional regression tests covering scheduler behavior, muted guards, fever tap indexing, and section-triggered instrument branching; suite now 77/77 and coverage 85.85% line |
+| INF-023 | Harden AudioEngine timer/window fallback behavior + tests | CODEX | 2026-03-06 | Added runtime-safe window accessor and global timer fallbacks in audio scheduler/stop path; added 2 fallback tests and raised suite to 80/80 with 86.37% coverage |
+| INF-024 | Reconcile pinboard snapshot counters after latest sweep | CODEX | 2026-03-06 | Updated pinboard verification snapshot to 80/80 and aligned step log wording with current regression scope |
 | OPS-002 | Phase 0 branch analysis for multi-PR merge plan | CODEX | 2026-03-06 | Completed local-only analysis in `BRANCH_ANALYSIS_2026-03-06.md`; remote branch/PR merge execution blocked by GitHub access limits in container |
+| OPS-003 | Execute ordered merge of PRs #3,#5,#13,#11,#10,#7,#2,#6,#4 | CODEX | 2026-03-06 | Local repository history already reflects consolidated merge outcomes through PR #17 on `work`; task closed as superseded/verified by `git log` + `COMPLETION_SWEEP_2026-03-06.md` |
 
 ---
 

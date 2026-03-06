@@ -4,6 +4,7 @@ export class AudioEngine {
   bpm = 128;
   isPlaying = false;
   current16thNote = 0;
+  total16thNotes = 0;
   nextNoteTime = 0.0;
   scheduleAheadTime = 0.1;
   lookahead = 25.0;
@@ -17,6 +18,10 @@ export class AudioEngine {
   noteIndex = 0;
   muted = false;
 
+  private getWindowRef(): (Window & typeof globalThis) | undefined {
+    return typeof window !== "undefined" ? window : undefined;
+  }
+
   setMuted(muted: boolean) {
     this.muted = muted;
     if (this.masterGain) {
@@ -26,7 +31,8 @@ export class AudioEngine {
 
   init() {
     if (this.ctx) return;
-    const AudioContextCtor = window.AudioContext ?? ((window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext);
+    const win = this.getWindowRef();
+    const AudioContextCtor = win?.AudioContext ?? (win as Window & { webkitAudioContext?: typeof AudioContext } | undefined)?.webkitAudioContext;
     if (!AudioContextCtor) return;
     this.ctx = new AudioContextCtor();
     this.masterGain = this.ctx.createGain();
@@ -42,11 +48,12 @@ export class AudioEngine {
     const secondsPerBeat = 60.0 / this.bpm;
     this.nextNoteTime += 0.25 * secondsPerBeat;
     this.current16thNote = (this.current16thNote + 1) % 16;
+    this.total16thNotes += 1;
   }
 
   scheduleNote(beatNumber: number, time: number) {
     if (!this.ctx || !this.masterGain) return;
-    const bar = Math.floor(this.current16thNote / 16);
+    const bar = Math.floor(this.total16thNotes / 16);
     const barOfSection = bar % 8;
     const section = Math.floor(bar / 8) % 4;
     let playKick = false, playBass = false, playSnare = false, playClosedHat = false, playOpenHat = false, playAcid = false, playArp = false;
@@ -182,7 +189,8 @@ export class AudioEngine {
       this.scheduleNote(this.current16thNote, this.nextNoteTime);
       this.nextNote();
     }
-    this.timerID = window.setTimeout(() => this.scheduler(), this.lookahead);
+    const win = this.getWindowRef();
+    this.timerID = (win?.setTimeout ?? globalThis.setTimeout)(() => this.scheduler(), this.lookahead) as unknown as number;
   }
 
   playBgm() {
@@ -194,12 +202,17 @@ export class AudioEngine {
     this.startTime = this.ctx.currentTime;
     this.nextNoteTime = this.ctx.currentTime + 0.1;
     this.current16thNote = 0;
+    this.total16thNotes = 0;
     this.scheduler();
   }
 
   stopBgm() {
     this.isPlaying = false;
-    if (this.timerID !== null) { window.clearTimeout(this.timerID); this.timerID = null; }
+    if (this.timerID !== null) {
+      const win = this.getWindowRef();
+      (win?.clearTimeout ?? globalThis.clearTimeout)(this.timerID);
+      this.timerID = null;
+    }
   }
 
   playTapSound(lane = 0, isFever = false) {
