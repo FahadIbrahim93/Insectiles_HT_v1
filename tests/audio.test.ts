@@ -183,3 +183,61 @@ test('playTapSound increments note index and respects lane clamping', () => {
   audio.playTapSound(0, false);
   assert.equal(audio.noteIndex, indexBeforeMuted);
 });
+
+
+test('nextNote increments absolute note counter across wraparound', () => {
+  const audio = new AudioEngine();
+  audio.current16thNote = 15;
+  audio.total16thNotes = 31;
+
+  audio.nextNote();
+
+  assert.equal(audio.current16thNote, 0);
+  assert.equal(audio.total16thNotes, 32);
+});
+
+test('playBgm resets counters before scheduling', () => {
+  const audio = new AudioEngine();
+  const { ctx } = createMockAudioContext();
+  audio.ctx = ctx as unknown as AudioContext;
+  audio.masterGain = { gain: createParam(0.5) } as unknown as GainNode;
+  audio.current16thNote = 9;
+  audio.total16thNotes = 99;
+
+  audio.scheduler = () => undefined;
+  audio.playBgm();
+
+  assert.equal(audio.current16thNote, 0);
+  assert.equal(audio.total16thNotes, 0);
+});
+
+test('scheduleNote uses absolute bar counter for arrangement progression', () => {
+  const audio = new AudioEngine();
+  const { ctx } = createMockAudioContext();
+  audio.ctx = ctx as unknown as AudioContext;
+  audio.masterGain = { gain: createParam(0.5), connect: () => undefined } as unknown as GainNode;
+
+  let arpCalls = 0;
+  let lastBar = -1;
+  audio.playArp = (_time: number, _beat: number, bar: number) => {
+    arpCalls += 1;
+    lastBar = bar;
+  };
+  audio.playAcid = () => undefined;
+  audio.playKick = () => undefined;
+  audio.playBass = () => undefined;
+  audio.playSnare = () => undefined;
+  audio.playHat = () => undefined;
+
+  const random = Math.random;
+  Math.random = () => 0;
+  try {
+    audio.total16thNotes = 16 * 24; // section 3
+    audio.scheduleNote(0, 0);
+  } finally {
+    Math.random = random;
+  }
+
+  assert.equal(arpCalls, 1);
+  assert.equal(lastBar, 24);
+});

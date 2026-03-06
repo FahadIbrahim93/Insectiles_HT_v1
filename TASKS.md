@@ -20,9 +20,9 @@
 - [x] High score persistence
 
 ### Phase 4: Release
-- [ ] Deploy to Vercel (config prepared via `vercel.json`)
-- [ ] Test on mobile devices (real hardware)
-- [ ] Launch!
+- [ ] Deploy to Vercel (external blocker: authenticated environment required)
+- [ ] Test on mobile devices (external blocker: physical hardware required)
+- [ ] Launch! (depends on the two external blockers above)
 
 ---
 
@@ -44,3 +44,4 @@
 
 ## Release Readiness Report
 - See `RELEASE_READINESS.md` for completed in-repo work and external launch blockers.
+- See `EXECUTION_TASKBOARD.md` for autonomous sweep evidence and blocker ownership.
