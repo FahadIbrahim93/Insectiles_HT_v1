@@ -12,7 +12,7 @@ test.describe('Pinik Pipra Game E2E Tests', () => {
 
   test('should display loading screen initially and game when loaded', async ({ page }) => {
     // Loading message should be visible initially
-    const loadingText = page.locator('text=LOADING PINIK PIPRA...');
+    const loadingText = page.locator('[data-testid="loading-screen"]');
     await expect(loadingText).toBeVisible({ timeout: 5000 });
     
     // Wait for game to load (canvas appears and loading disappears)

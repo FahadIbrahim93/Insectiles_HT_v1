@@ -243,7 +243,7 @@ export default function Game() {
 
   if (!assetsLoaded) {
     return (
-      <div className="flex items-center justify-center w-full h-full bg-black text-white">
+      <div data-testid="loading-screen" className="flex items-center justify-center w-full h-full bg-black text-white">
         <div className="flex flex-col items-center gap-3">
           <div className="h-16 w-16 rounded-full border-4 border-fuchsia-500 border-t-transparent animate-spin" />
           <div className="text-2xl animate-pulse font-mono tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-500 via-cyan-500 to-yellow-500">

@@ -56,7 +56,7 @@ export default function GameOverlay({
         >
           <div className="w-full h-full flex items-center justify-center rounded-full bg-black/90 group-hover:bg-transparent transition-colors">
             <span className="text-xl font-bold tracking-widest uppercase text-white">
-              {gameOver ? 'START AGAIN' : 'START THE TRIP'}
+              {gameOver ? 'START AGAIN' : 'START'}
             </span>
           </div>
         </button>
