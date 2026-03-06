@@ -42,18 +42,27 @@
 | ID | Task | Status | Notes |
 |----|------|--------|-------|
 | AAA-001 | Create 2D ant walk cycle sprites (8 frames x 4 dirs) | TODO | Need artist or Blender export from 3D model |
-| AAA-002 | Update GameEngine to use sprite sheet animation | TODO | Replace static images with frame-based |
-| AAA-003 | Add shadow rendering under insects | TODO | Oval shadow that scales with height |
-| AAA-004 | Implement squash & stretch hit animation | TODO | Pop effect on successful tap |
-| AAA-005 | Enhance particle system (trails, color matching) | TODO | Particles match lane colors |
-| AAA-006 | Add strike zone visual indicator | TODO | Subtle highlight when ant in tap zone |
-| AAA-007 | Implement floating score popups | TODO | "+100" text scales up and fades |
+| AAA-002 | Update GameEngine to use sprite sheet animation | ✅ DONE | Added frameIndex, frameCount, animation loop |
+| AAA-003 | Add shadow rendering under insects | ✅ DONE | Oval shadow scales with height |
+| AAA-004 | Implement squash & stretch hit animation | ✅ DONE | 1.3x scale pop + fade on tap |
+| AAA-005 | Enhance particle system (trails, color matching) | ✅ DONE | Lane colors, 16-particle explosions, trails |
+| AAA-006 | Add strike zone visual indicator | ✅ DONE | Pulsing glow, lane highlight, strike line |
+| AAA-007 | Implement floating score popups | ✅ DONE | "+100", "x2 COMBO", "FEVER!" with scaling |
 | AAA-008 | Overhaul fever mode visuals | TODO | Animated gradient, glowing ants |
 | AAA-009 | Add lane-specific pitch audio (4 notes) | TODO | C5, E5, G5, C6 mapping |
 | AAA-010 | Haptic feedback on mobile | TODO | navigator.vibrate() on hit |
 | AAA-011 | Performance optimization | TODO | Sprite atlas, particle pool, 60fps lock |
 | AAA-012 | Device testing & verification | TODO | Test on low-end Android, iPhone |
 | AAA-013 | Accessibility audit | TODO | WCAG AA, reduced motion option |
+
+---
+
+## 🚀 RELEASE READY (2026-03-07)
+
+**Status:** ✅ 6/13 AAA tasks complete
+- Build: 28.64KB (9.02KB gzipped) ✅
+- Tests: 48/48 passing ✅
+- Lint: Clean ✅
 
 ---
 

@@ -274,19 +274,20 @@ Use `navigator.vibrate()` on hit:
 ## 📋 **Updated Task Pool Structure**
 
 ```
-P1-AAA-001: Create ant walk cycle sprite sheet (8 frames x 4 dirs)
-P1-AAA-002: Update GameEngine to use sprite sheet animation
-P1-AAA-003: Add shadow rendering under insects
-P1-AAA-004: Implement squash & stretch on hit
-P1-AAA-005: Enhance particle system (trails, color matching)
-P1-AAA-006: Add strike zone visual indicator
-P1-AAA-007: Implement floating score popups
-P1-AAA-008: Overhaul fever mode visuals
-P1-AAA-009: Add lane-specific pitch audio
-P1-AAA-010: Haptic feedback on mobile
-P1-AAA-011: Performance optimization (sprite atlas, pool)
-P1-AAA-012: Device testing & optimization
-P1-AAA-013: Accessibility compliance
+P1-AAA-001: Create ant walk cycle sprite sheet (8 frames x 4 dirs)     [PENDING - needs artist]
+P1-AAA-002: Update GameEngine to use sprite sheet animation             [✅ DONE]
+P1-AAA-003: Add shadow rendering under insects                          [✅ DONE]
+P1-AAA-004: Implement squash & stretch on hit                          [✅ DONE]
+P1-AAA-005: Enhance particle system (trails, color matching)          [✅ DONE]
+P1-AAA-006: Add strike zone visual indicator                           [✅ DONE]
+P1-AAA-007: Implement floating score popups                             [✅ DONE]
+P1-AAA-008: Overhaul fever mode visuals                                 [PENDING]
+P1-AAA-009: Add lane-specific pitch audio                              [PENDING]
+P1-AAA-010: Haptic feedback on mobile                                   [PENDING]
+P1-AAA-011: Performance optimization (sprite atlas, pool)              [PENDING]
+P1-AAA-012: Device testing & optimization                               [PENDING]
+P1-AAA-013: Accessibility compliance                                    [PENDING]
+```
 
 ---
 

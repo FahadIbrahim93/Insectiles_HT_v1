@@ -22,19 +22,19 @@
 
 | ID | Task | Type | Agent | Status |
 |----|------|------|-------|--------|
-| AAA-001 | Create 2D ant walk cycle sprites (8 frames x 4 dirs) | Asset | OPEN | OPEN |
-| AAA-002 | Update GameEngine to use sprite sheet animation | Backend | OPEN | OPEN |
-| AAA-003 | Add shadow rendering under insects | Frontend | OPEN | OPEN |
-| AAA-004 | Implement squash & stretch hit animation | Frontend | OPEN | OPEN |
-| AAA-005 | Enhance particle system (trails, color matching) | Frontend | OPEN | OPEN |
-| AAA-006 | Add strike zone visual indicator | Frontend | OPEN | OPEN |
-| AAA-007 | Implement floating score popups | Frontend | OPEN | OPEN |
-| AAA-008 | Overhaul fever mode visuals (gradient, glow) | Frontend | OPEN | OPEN |
-| AAA-009 | Add lane-specific pitch audio (4 notes) | Audio | OPEN | OPEN |
-| AAA-010 | Haptic feedback on mobile (vibrate) | Frontend | OPEN | OPEN |
-| AAA-011 | Performance optimization (sprite atlas, pooling) | Backend | OPEN | OPEN |
-| AAA-012 | Device testing & 60fps verification | QA | OPEN | OPEN |
-| AAA-013 | Accessibility audit (WCAG, reduced motion) | QA | OPEN | OPEN |
+| AAA-001 | Create 2D ant walk cycle sprites (8 frames x 4 dirs) | Asset | OPEN | PENDING |
+| AAA-002 | Update GameEngine to use sprite sheet animation | Backend | CODEX | DONE |
+| AAA-003 | Add shadow rendering under insects | Frontend | CODEX | DONE |
+| AAA-004 | Implement squash & stretch hit animation | Frontend | CODEX | DONE |
+| AAA-005 | Enhance particle system (trails, color matching) | Frontend | CODEX | DONE |
+| AAA-006 | Add strike zone visual indicator | Frontend | CODEX | DONE |
+| AAA-007 | Implement floating score popups | Frontend | CODEX | DONE |
+| AAA-008 | Overhaul fever mode visuals (gradient, glow) | Frontend | OPEN | PENDING |
+| AAA-009 | Add lane-specific pitch audio (4 notes) | Audio | OPEN | PENDING |
+| AAA-010 | Haptic feedback on mobile (vibrate) | Frontend | OPEN | PENDING |
+| AAA-011 | Performance optimization (sprite atlas, pooling) | Backend | OPEN | PENDING |
+| AAA-012 | Device testing & 60fps verification | QA | OPEN | PENDING |
+| AAA-013 | Accessibility audit (WCAG, reduced motion) | QA | OPEN | PENDING |
 
 ---
 

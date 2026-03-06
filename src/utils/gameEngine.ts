@@ -10,6 +10,15 @@ export interface Insect {
   speed: number;
   isFeverTarget?: boolean;
   cachedImage?: HTMLImageElement;
+  // Animation state (AAA-002)
+  frameIndex: number;
+  frameCount: number;
+  frameAdvanceCounter: number;
+  frameAdvanceRate: number;
+  // Hit animation state (AAA-004)
+  hitScale?: number;
+  hitAlpha?: number;
+  isHit?: boolean;
 }
 
 export interface PowerUp {
@@ -34,6 +43,16 @@ export interface Particle {
   vy: number;
   life: number;
   maxLife: number;
+  color: string;
+}
+
+export interface ScorePopup {
+  x: number;
+  y: number;
+  text: string;
+  life: number;
+  maxLife: number;
+  scale: number;
   color: string;
 }
 
@@ -78,6 +97,7 @@ export class GameEngine {
   private powerUps: PowerUp[] = [];
   private psyEffects: PsyEffect[] = [];
   private particles: Particle[] = [];
+  private scorePopups: ScorePopup[] = [];
   private speed: number;
   private frames = 0;
   private lastSpawnFrame = 0;
@@ -91,6 +111,18 @@ export class GameEngine {
   private static readonly SPRITE_FALLING_START = 12;  // BUG_1-4 (PNG with transparency) - was 0 for FALLING_1-4 (JPEG boxes)
   private static readonly SPRITE_FEVER_START = 12;    // BUG_1-4 (PNG with transparency) - was 8 for ANT_MASCOT_1-4
   private static readonly SPRITE_COUNT = 4;
+
+  // Animation configuration (AAA-002)
+  private static readonly WALK_FRAME_COUNT = 8;
+  private static readonly WALK_FRAME_RATE = 5;
+
+  // Lane-specific colors for particles (AAA-005)
+  private static readonly LANE_COLORS = [
+    'rgba(255,100,150,ALPHA)',  // Lane 0: Pink
+    'rgba(100,200,255,ALPHA)',  // Lane 1: Blue
+    'rgba(150,255,150,ALPHA)',  // Lane 2: Green
+    'rgba(255,220,100,ALPHA)',  // Lane 3: Gold
+  ];
 
   private requestRef: number | undefined;
   private isRunning = false;
@@ -124,6 +156,7 @@ export class GameEngine {
     this.powerUps = [];
     this.psyEffects = [];
     this.particles = [];
+    this.scorePopups = [];
     this.speed = this.config.initialSpeed;
     this.frames = 0;
     this.lastSpawnFrame = 0;
@@ -198,6 +231,8 @@ export class GameEngine {
     this.advancePowerUps(speedMultiplier);
     this.psyEffects = advancePsyEffects(this.psyEffects);
     this.advanceParticles();
+    this.advanceInsectAnimations();
+    this.advanceScorePopups();
 
     this.draw();
 
@@ -230,6 +265,13 @@ export class GameEngine {
       speed: this.speed * (isFeverMode ? 1.5 : 1),
       isFeverTarget: isFeverMode,
       cachedImage,
+      frameIndex: 0,
+      frameCount: GameEngine.WALK_FRAME_COUNT,
+      frameAdvanceCounter: 0,
+      frameAdvanceRate: GameEngine.WALK_FRAME_RATE,
+      hitScale: 1,
+      hitAlpha: 1,
+      isHit: false,
     });
   }
 
@@ -261,6 +303,47 @@ export class GameEngine {
     this.particles = next;
   }
 
+  private advanceInsectAnimations(): void {
+    const next: Insect[] = [];
+    for (const insect of this.insects) {
+      // Handle hit animation (AAA-004: squash & stretch)
+      if (insect.isHit) {
+        insect.hitAlpha = (insect.hitAlpha || 1) - 0.08;
+        insect.hitScale = (insect.hitScale || 1) + 0.02;
+        if (insect.hitAlpha <= 0) continue; // Remove after fade out
+      }
+
+      // Handle walk cycle animation (AAA-002)
+      if (!insect.isHit) {
+        insect.frameAdvanceCounter++;
+        if (insect.frameAdvanceCounter >= insect.frameAdvanceRate) {
+          insect.frameAdvanceCounter = 0;
+          insect.frameIndex = (insect.frameIndex + 1) % insect.frameCount;
+        }
+        // AAA-005: Spawn trail particles for falling insects
+        if (this.frames % 6 === 0) {
+          this.createTrailParticle(insect);
+        }
+      }
+
+      next.push(insect);
+    }
+    this.insects = next;
+  }
+
+  private advanceScorePopups(): void {
+    const next: ScorePopup[] = [];
+    for (const popup of this.scorePopups) {
+      popup.y -= 1.5;
+      popup.scale = 1.3 - (popup.life / popup.maxLife) * 0.4;
+      popup.life++;
+      if (popup.life < popup.maxLife) {
+        next.push(popup);
+      }
+    }
+    this.scorePopups = next;
+  }
+
    private draw(): void {
     const ctx = this.canvas.getContext('2d');
     if (!ctx) return;
@@ -271,13 +354,34 @@ export class GameEngine {
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-    // Draw strike zone indicators at bottom (subtle)
+    // Draw strike zone indicators at bottom (AAA-006)
     const laneWidth = this.canvas.width / this.config.laneCount;
+    const strikeZoneY = this.canvas.height - this.config.tileHeight;
+
     if (!isFeverMode) {
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.03)';
+      // Base strike zone with pulsing glow
+      const pulseAlpha = 0.05 + Math.sin(this.frames * 0.08) * 0.02;
+      ctx.fillStyle = `rgba(255, 255, 255, ${pulseAlpha})`;
       for (let i = 0; i < this.config.laneCount; i++) {
-        ctx.fillRect(i * laneWidth, this.canvas.height - this.config.tileHeight, laneWidth, this.config.tileHeight);
+        ctx.fillRect(i * laneWidth, strikeZoneY, laneWidth, this.config.tileHeight);
       }
+
+      // Highlight lanes with insects in strike zone
+      for (const insect of this.insects) {
+        if (insect.y > strikeZoneY - this.config.tileHeight && !insect.isHit) {
+          const laneColor = GameEngine.LANE_COLORS[insect.lane % GameEngine.LANE_COLORS.length].replace('ALPHA', '0.15');
+          ctx.fillStyle = laneColor;
+          ctx.fillRect(insect.lane * laneWidth, strikeZoneY, laneWidth, this.config.tileHeight);
+        }
+      }
+
+      // Draw strike line
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(0, strikeZoneY);
+      ctx.lineTo(this.canvas.width, strikeZoneY);
+      ctx.stroke();
     }
 
     // Draw psychedelic overlay in fever mode
@@ -294,6 +398,18 @@ export class GameEngine {
       const size = this.config.tileHeight * (isFeverMode ? 1.2 : 0.8);
       const wobble = Math.sin(this.frames * 0.1 + insect.id) * 5; // Slight wobble
 
+      // AAA-003: Draw shadow under insect for depth
+      const shadowY = insect.y + this.config.tileHeight + 10;
+      const shadowScale = Math.max(0.3, 1 - (insect.y / this.canvas.height) * 0.5);
+      ctx.save();
+      ctx.translate(insect.lane * laneWidth + laneWidth / 2, shadowY);
+      ctx.scale(shadowScale, shadowScale * 0.3);
+      ctx.beginPath();
+      ctx.ellipse(0, 0, size * 0.6, size * 0.3, 0, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+      ctx.fill();
+      ctx.restore();
+
       ctx.save();
       // Position with slight horizontal wobble for "scurrying" effect
       const centerX = insect.lane * laneWidth + laneWidth / 2 + wobble;
@@ -303,6 +419,12 @@ export class GameEngine {
       // Subtle scale pulse for "breathing" life
       const pulse = 1 + Math.sin(this.frames * 0.15 + insect.id) * 0.05;
       ctx.scale(pulse, pulse);
+
+      // AAA-004: Apply hit animation (squash & stretch)
+      if (insect.isHit && insect.hitScale !== undefined) {
+        ctx.scale(insect.hitScale, insect.hitScale);
+        ctx.globalAlpha = Math.max(0, insect.hitAlpha || 1);
+      }
 
       if (isFeverMode) {
         ctx.shadowBlur = 20;
@@ -346,6 +468,23 @@ export class GameEngine {
       ctx.fillRect(particle.x, particle.y, 3, 3);
     }
 
+    // AAA-007: Render floating score popups
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    for (const popup of this.scorePopups) {
+      const alpha = 1 - popup.life / popup.maxLife;
+      ctx.save();
+      ctx.translate(popup.x, popup.y);
+      ctx.scale(popup.scale, popup.scale);
+      ctx.globalAlpha = alpha;
+      ctx.font = 'bold 24px Arial';
+      ctx.fillStyle = popup.color;
+      ctx.shadowColor = 'rgba(0,0,0,0.5)';
+      ctx.shadowBlur = 4;
+      ctx.fillText(popup.text, 0, 0);
+      ctx.restore();
+    }
+
     ctx.restore();
   }
 
@@ -373,16 +512,25 @@ export class GameEngine {
       return;
     }
 
-    this.insects = this.insects.filter((ins) => ins.id !== topInsect.id);
+    // AAA-004: Trigger hit animation instead of instant removal
+    const hitInsect = this.insects.find((ins) => ins.id === topInsect.id);
+    if (hitInsect) {
+      hitInsect.isHit = true;
+      hitInsect.hitScale = 1.3;
+      hitInsect.hitAlpha = 1;
+    }
+
     const comboMultiplier = this.callbacks.recordHit();
     const baseScore = this.callbacks.getIsFeverMode() ? 200 : 100;
-    this.callbacks.addScore(baseScore * comboMultiplier);
+    const totalScore = baseScore * comboMultiplier;
+    this.callbacks.addScore(totalScore);
     this.shake = this.callbacks.getIsFeverMode() ? 15 : 5;
 
     const hitX = topInsect.lane * (this.canvas.width / this.config.laneCount) + this.canvas.width / this.config.laneCount / 2;
     const hitY = topInsect.y + this.config.tileHeight / 2;
     this.createPsyEffect(hitX, hitY);
     this.createExplosion(lane, topInsect.y, this.callbacks.getIsFeverMode() ? 'rgba(255,70,200,ALPHA)' : 'rgba(255,220,80,ALPHA)');
+    this.createScorePopup(hitX, hitY, totalScore, comboMultiplier);
 
     if (this.callbacks.getSoundEnabled()) {
       this.callbacks.playTapSound(this.callbacks.getIsFeverMode());
@@ -403,19 +551,64 @@ export class GameEngine {
     const laneWidth = this.canvas.width / this.config.laneCount;
     const centerX = lane * laneWidth + laneWidth / 2;
     const centerY = y + this.config.tileHeight * 0.4;
+    const laneColor = GameEngine.LANE_COLORS[lane % GameEngine.LANE_COLORS.length];
 
-    for (let i = 0; i < 14; i++) {
-      const angle = (Math.PI * 2 * i) / 14;
-      const speed = 1 + Math.random() * 2;
+    // AAA-005: Enhanced explosion with more particles and lane colors
+    for (let i = 0; i < 16; i++) {
+      const angle = (Math.PI * 2 * i) / 16 + Math.random() * 0.3;
+      const speed = 1.5 + Math.random() * 3;
+      const useLaneColor = Math.random() > 0.3;
       this.particles.push({
         x: centerX,
         y: centerY,
         vx: Math.cos(angle) * speed,
         vy: Math.sin(angle) * speed,
         life: 0,
-        maxLife: 24,
-        color,
+        maxLife: 20 + Math.random() * 10,
+        color: useLaneColor ? laneColor : color,
       });
     }
+  }
+
+  // AAA-005: Create trail particles behind falling insects
+  private createTrailParticle(insect: Insect): void {
+    const laneWidth = this.canvas.width / this.config.laneCount;
+    const centerX = insect.lane * laneWidth + laneWidth / 2;
+    const laneColor = GameEngine.LANE_COLORS[insect.lane % GameEngine.LANE_COLORS.length];
+
+    this.particles.push({
+      x: centerX + (Math.random() - 0.5) * 20,
+      y: insect.y + this.config.tileHeight * 0.8,
+      vx: (Math.random() - 0.5) * 0.5,
+      vy: 0.3 + Math.random() * 0.5,
+      life: 0,
+      maxLife: 12,
+      color: laneColor,
+    });
+  }
+
+  // AAA-007: Create floating score popup
+  private createScorePopup(x: number, y: number, points: number, combo: number): void {
+    let color = '#fff';
+    let text = `+${points}`;
+
+    if (combo >= 3) {
+      color = '#ffd700'; // Gold for combo
+      text = `${points} x${combo}`;
+    }
+    if (this.callbacks.getIsFeverMode()) {
+      color = '#ff46c8'; // Fever pink
+      text = `${points} FEVER!`;
+    }
+
+    this.scorePopups.push({
+      x,
+      y,
+      text,
+      life: 0,
+      maxLife: 40,
+      scale: 1.3,
+      color,
+    });
   }
 }
