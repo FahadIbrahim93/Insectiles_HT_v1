@@ -341,7 +341,7 @@ export class GameEngine {
     const reducedMotion = this.callbacks.getReducedMotion();
 
     ctx.fillStyle = '#000';
-    ctx.clearRect(0, 0, this.canvas.width, this.canvas.height); ctx.fillStyle = "#000"; ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
     this.drawStrikeZone(ctx, isFeverMode);
     if (isFeverMode) this.drawFeverOverlay(ctx, reducedMotion);
@@ -386,7 +386,7 @@ export class GameEngine {
     grad.addColorStop(0.5, `hsla(${(this.hue + 60) % 360}, 90%, 50%, ${reducedMotion ? 0.1 : 0.2})`);
     grad.addColorStop(1, `hsla(${(this.hue + 120) % 360}, 95%, 45%, ${reducedMotion ? 0.14 : 0.35})`);
     ctx.fillStyle = grad;
-    ctx.clearRect(0, 0, this.canvas.width, this.canvas.height); ctx.fillStyle = "#000"; ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
     if (!reducedMotion) {
       const pulse = 0.4 + Math.sin(this.frames * 0.2) * 0.2;
@@ -420,12 +420,12 @@ export class GameEngine {
     ctx.scale(pulse, pulse);
 
     if (insect.isHit) {
-      const s = (insect.hitScale || 1); ctx.scale(s, 2 - s);
+      ctx.scale(insect.hitScale || 1, insect.hitScale || 1);
       ctx.globalAlpha = Math.max(0, insect.hitAlpha || 1);
     }
 
     if (isFever) {
-      ctx.shadowBlur = 30; ctx.shadowOffsetX = (Math.random()-0.5)*8; ctx.shadowOffsetY = (Math.random()-0.5)*8;
+      ctx.shadowBlur = 20;
       ctx.shadowColor = `hsla(${this.hue}, 100%, 50%, 1)`;
     }
 
@@ -518,7 +518,7 @@ export class GameEngine {
     const isFever = this.callbacks.getIsFeverMode();
     const points = (isFever ? 200 : 100) * combo;
     this.callbacks.addScore(points);
-    this.shake = isFever ? 25 : 8;
+    this.shake = isFever ? 15 : 5;
 
     const laneWidth = this.canvas.width / this.config.laneCount;
     const hitX = target.lane * laneWidth + laneWidth / 2;

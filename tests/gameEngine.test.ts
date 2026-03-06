@@ -225,3 +225,56 @@ test('handleTap scores hit and sets insect hit animation state', () => {
   assert.equal((engine as any).insects[0].hitScale, 1.3);
   assert.equal((engine as any).scorePopups.length, 1);
 });
+
+test('handleTap calls onMultiplierIncrease when combo is greater than 1', () => {
+  let multiplierResult = 0;
+  const callbacks = {
+    ...createCallbacks(),
+    recordHit: () => 2,
+    onMultiplierIncrease: (m: number) => {
+      multiplierResult = m;
+    },
+  };
+
+  const engine = createEngine(callbacks);
+  (engine as any).insects = [
+    { id: 10, lane: 0, y: 400, speed: 5, spriteIndex: 0 },
+  ];
+
+  engine.handleTap(0);
+  assert.equal(multiplierResult, 2);
+});
+
+test('createExplosion generates correct number of particles in normal and fever mode', () => {
+  const callbacks = createCallbacks();
+  const engine = createEngine(callbacks);
+  (engine as any).canvas = { width: 400, height: 800 };
+
+  // Normal mode
+  (engine as any).createExplosion(0, 400, 'rgba(255,255,255,ALPHA)');
+  assert.equal((engine as any).particles.length, 16);
+  (engine as any).particles = [];
+
+  // Fever mode
+  const feverCallbacks = { ...createCallbacks(), getIsFeverMode: () => true };
+  const feverEngine = createEngine(feverCallbacks);
+  (feverEngine as any).canvas = { width: 400, height: 800 };
+  (feverEngine as any).createExplosion(0, 400, 'rgba(255,255,255,ALPHA)');
+  assert.equal((feverEngine as any).particles.length, 24);
+
+  // Verify rainbow colors (hsla) in fever mode
+  const particle = (feverEngine as any).particles[0];
+  assert.ok(particle.color.startsWith('hsla('));
+});
+
+test('createTrailParticle uses rainbow colors in fever mode', () => {
+  const feverCallbacks = { ...createCallbacks(), getIsFeverMode: () => true };
+  const engine = createEngine(feverCallbacks);
+  (engine as any).canvas = { width: 400, height: 800 };
+  const insect = { id: 99, lane: 1, y: 100, speed: 5 };
+
+  (engine as any).createTrailParticle(insect);
+  const particle = (engine as any).particles[0];
+  assert.ok(particle.color.startsWith('hsla('));
+  assert.ok(particle.maxLife > 12); // isFever ? 18 : 12
+});
