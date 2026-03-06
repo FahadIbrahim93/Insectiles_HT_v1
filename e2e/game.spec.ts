@@ -30,7 +30,7 @@ test.describe('Pinik Pipra Game E2E Tests', () => {
     await expect(overlay).toBeVisible();
     
     // Click start button
-    const startButton = page.locator('button:has-text("START")');
+    const startButton = page.locator('button[data-testid="start-button"]');
     await expect(startButton).toBeVisible();
     await startButton.click();
     
@@ -44,7 +44,7 @@ test.describe('Pinik Pipra Game E2E Tests', () => {
 
   test('should increase score on successful insect hit', async ({ page }) => {
     // Start the game
-    await page.click('button:has-text("START")');
+    await page.locator('button[data-testid="start-button"]').click();
     
     // Get initial score
     const scoreElement = page.locator('[data-testid="score"]');
@@ -70,18 +70,18 @@ test.describe('Pinik Pipra Game E2E Tests', () => {
   test('should activate fever mode at 500 points', async ({ page }) => {
     // This test would require manipulating score directly or playing until 500
     // For E2E, we'll check that fever progress bar exists and updates
-    await page.click('button:has-text("START")');
+    await page.locator('button[data-testid="start-button"]').click();
     
     // Look for fever progress indicator
     const feverProgress = page.locator('[data-testid="fever-progress"]');
     await expect(feverProgress).toBeVisible();
     
     // The fever mode should not be active initially
-    expect(await page.locator('[data-testid="fever-indicator"]').count()).toBe(0);
+    await expect(page.locator('[data-testid="fever-indicator"]')).not.toBeVisible();
   });
 
   test('should handle keyboard controls (1-4 keys)', async ({ page }) => {
-    await page.click('button:has-text("START")');
+    await page.locator('button[data-testid="start-button"]').click();
     
     // Wait for insects to spawn
     await page.waitForTimeout(2000);
@@ -105,7 +105,7 @@ test.describe('Pinik Pipra Game E2E Tests', () => {
       }
     });
 
-    await page.click('button:has-text("START")');
+    await page.locator('button[data-testid="start-button"]').click();
     
     // Wait and interact
     await page.waitForTimeout(3000);
@@ -125,7 +125,7 @@ test.describe('Pinik Pipra Game E2E Tests', () => {
   });
 
   test('should display game over when insect reaches bottom', async ({ page }) => {
-    await page.click('button:has-text("START")');
+    await page.locator('button[data-testid="start-button"]').click();
     
     // Wait for game over (might take a while depending on spawn rate)
     // In normal mode, missing 3 insects causes game over
@@ -146,7 +146,7 @@ test.describe('Pinik Pipra Game E2E Tests', () => {
 
   test('should restart game after game over', async ({ page }) => {
     // Start game
-    await page.click('button:has-text("START")');
+    await page.locator('button[data-testid="start-button"]').click();
     
     // Force game over by calling store method (injecting script)
     await page.evaluate(() => {
@@ -158,10 +158,10 @@ test.describe('Pinik Pipra Game E2E Tests', () => {
     });
     
     // Wait for overlay to reappear
-    await page.waitForSelector('button:has-text("START")');
+    await page.waitForSelector('button[data-testid="start-button"]', { state: "visible" });
     
     // Click start again
-    await page.click('button:has-text("START")');
+    await page.locator('button[data-testid="start-button"]').click();
     
     // Game should be playing again with score reset
     const scoreElement = page.locator('[data-testid="score"]');
@@ -170,7 +170,7 @@ test.describe('Pinik Pipra Game E2E Tests', () => {
 
   test('should persist high score in localStorage', async ({ page }) => {
     // Start and play to get a score
-    await page.click('button:has-text("START")');
+    await page.locator('button[data-testid="start-button"]').click();
     
     // Wait and interact to build score
     await page.waitForTimeout(5000);

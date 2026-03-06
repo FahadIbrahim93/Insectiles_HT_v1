@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite --port=3000 --host=0.0.0.0",
     "build": "vite build",
-    "preview": "vite preview",
+    "preview": "vite preview --port 3000 --host 0.0.0.0",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
     "test": "node --import tsx --import ./tests/setup.ts --test tests/*.test.ts",
@@ -14,15 +14,15 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:debug": "playwright test --debug",
-    "audit:prod": "npm audit --omit=dev --audit-level=high",
+    "audit:prod": "pnpm audit --prod --audit-level=high",
     "e2e:install": "npx playwright install --with-deps",
     "e2e:preflight": "node ./scripts/e2e-preflight.mjs",
-    "test:e2e:smoke": "npm run e2e:preflight && playwright test --project=chromium",
+    "test:e2e:smoke": "pnpm run e2e:preflight && playwright test --project=chromium",
     "perf:smoke": "node --import tsx ./scripts/perf-smoke.mjs",
     "test:coverage": "node --experimental-test-coverage --import tsx --import ./tests/setup.ts --test tests/*.test.ts",
     "audit:branches": "node scripts/branch-pr-audit.mjs",
     "audit:branches:check": "node scripts/branch-pr-audit.mjs --check",
-    "audit:branches:verify": "npm run audit:branches && npm run audit:branches:validate",
+    "audit:branches:verify": "pnpm run audit:branches && pnpm run audit:branches:validate",
     "audit:branches:validate": "node scripts/branch-pr-audit.mjs --validate"
   },
   "dependencies": {
