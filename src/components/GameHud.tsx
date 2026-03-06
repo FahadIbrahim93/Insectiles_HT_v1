@@ -40,7 +40,7 @@ export default function GameHud({
           <button
             type="button"
             onClick={onToggleSound}
-            className="pointer-events-auto rounded-full bg-white/10 px-3 py-1 text-xs font-mono text-white hover:bg-white/20"
+            aria-label={soundEnabled ? "Mute sound" : "Unmute sound"} role="button" className="focus-visible:ring-4 focus-visible:ring-cyan-400 outline-none pointer-events-auto rounded-full bg-white/10 px-3 py-1 text-xs font-mono text-white hover:bg-white/20"
           >
             {soundEnabled ? '🔊 Sound On' : '🔇 Sound Off'}
           </button>

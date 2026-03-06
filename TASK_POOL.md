@@ -29,12 +29,12 @@
 | AAA-005 | Enhance particle system (trails, color matching) | Frontend | CODEX | DONE |
 | AAA-006 | Add strike zone visual indicator | Frontend | CODEX | DONE |
 | AAA-007 | Implement floating score popups | Frontend | CODEX | DONE |
-| AAA-008 | Overhaul fever mode visuals (gradient, glow) | Frontend | OPEN | PENDING |
-| AAA-009 | Add lane-specific pitch audio (4 notes) | Audio | OPEN | PENDING |
-| AAA-010 | Haptic feedback on mobile (vibrate) | Frontend | OPEN | PENDING |
-| AAA-011 | Performance optimization (sprite atlas, pooling) | Backend | OPEN | PENDING |
-| AAA-012 | Device testing & 60fps verification | QA | OPEN | PENDING |
-| AAA-013 | Accessibility audit (WCAG, reduced motion) | QA | OPEN | PENDING |
+| AAA-008 | Overhaul fever mode visuals (gradient, glow) | Frontend | Jules | DONE |
+| AAA-009 | Add lane-specific pitch audio (4 notes) | Audio | Jules | DONE |
+| AAA-010 | Haptic feedback on mobile (vibrate) | Frontend | Jules | DONE |
+| AAA-011 | Performance optimization (sprite atlas, pooling) | Backend | Jules | DONE |
+| AAA-012 | Device testing & 60fps verification | QA | Jules | DONE |
+| AAA-013 | Accessibility audit (WCAG, reduced motion) | QA | Jules | DONE |
 
 ---
 

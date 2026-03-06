@@ -12,7 +12,7 @@ export const updateScreenShake = (currentShake: number, isFeverMode: boolean, fr
   let nextShake = currentShake;
   if (nextShake > 0) nextShake *= 0.9;
   if (nextShake < 0) nextShake = 0; // clamp to non-negative
-  if (isFeverMode && frames % 10 === 0) nextShake = 10;
+  if (isFeverMode && frames % 10 === 0) nextShake = 15;
   return nextShake;
 };
 

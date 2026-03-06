@@ -14,3 +14,15 @@ if (!globalThis.localStorage) {
     writable: false,
   });
 }
+
+if (!globalThis.window) {
+  (globalThis as any).window = globalThis;
+}
+
+if (!globalThis.navigator) {
+  (globalThis as any).navigator = { vibrate: () => true };
+}
+
+if (!(globalThis as any).matchMedia) {
+  (globalThis as any).matchMedia = () => ({ matches: false });
+}

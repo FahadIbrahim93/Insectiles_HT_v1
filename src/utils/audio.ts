@@ -199,7 +199,7 @@ export class AudioEngine {
     if (this.timerID !== null) { window.clearTimeout(this.timerID); this.timerID = null; }
   }
 
-  playTapSound(isFever = false) {
+  playTapSound(isFever = false, lane = 0) {
     if (this.muted) return;
     if (!this.ctx || !this.masterGain) return;
     const osc = this.ctx.createOscillator();
@@ -209,9 +209,8 @@ export class AudioEngine {
       osc.frequency.exponentialRampToValueAtTime(1760, this.ctx.currentTime + 0.1);
       gain.gain.setValueAtTime(0.8, this.ctx.currentTime);
     } else {
-      const freq = this.notes[this.noteIndex % this.notes.length] ?? 261.63;
-      this.noteIndex++; osc.type = 'triangle';
-      osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+      const laneFreqs = [261.63, 293.66, 329.63, 349.23]; const freq = isFever ? 880 : (laneFreqs[lane % 4] ?? 261.63);
+      osc.type = isFever ? "sine" : "triangle"; osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
       gain.gain.setValueAtTime(0.5, this.ctx.currentTime);
     }
     gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.2);

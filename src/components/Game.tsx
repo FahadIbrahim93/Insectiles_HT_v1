@@ -116,7 +116,7 @@ export default function Game() {
         activateShield,
         activateSlowMo,
         playFeverActivation: () => audio.playFeverActivation(),
-        playTapSound: (isFever: boolean) => audio.playTapSound(isFever),
+        playTapSound: (isFever: boolean, lane: number) => audio.playTapSound(isFever, lane),
         playErrorSound: () => audio.playErrorSound(),
         stopBgm: () => audio.stopBgm(),
       }
