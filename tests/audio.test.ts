@@ -107,6 +107,21 @@ test('init sets up context and noise buffer when AudioContext exists', () => {
   assert.ok(audio.noiseBuffer);
 });
 
+test('init falls back to webkitAudioContext when AudioContext is unavailable', () => {
+  const { ctx } = createMockAudioContext();
+  (globalThis as { window: unknown }).window = {
+    webkitAudioContext: function MockWebkitAudioContext() {
+      return ctx;
+    },
+  };
+
+  const audio = new AudioEngine();
+  audio.init();
+
+  assert.equal(audio.ctx, ctx as unknown as AudioContext);
+  assert.ok(audio.masterGain);
+});
+
 test('setMuted updates gain value when masterGain exists', () => {
   const audio = new AudioEngine();
   audio.masterGain = { gain: createParam(0.5) } as unknown as GainNode;
