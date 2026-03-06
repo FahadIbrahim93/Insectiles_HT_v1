@@ -83,3 +83,42 @@ This project uses an **Autonomous Multi-Agent System** where:
 - Added autonomous completion sweep table and closeout statement requirements.
 - Added hardening evidence format and zero-issues closure loop.
 - Added current sweep closeout table with blocker and open question tracking.
+
+### 2026-03-06: Branch/PR Index Refresh + Gameplay State Safety + Test Expansion
+**Decision**: Treat current `work` head as canonical baseline and harden gameplay/store verification.
+**Details**:
+- Rebuilt `PR_INDEX.md` from current git graph to remove stale "open PR" assumptions.
+- Updated `Game.tsx` engine callbacks to read live state via `useGameStore.getState()` (no stale closure values).
+- Expanded store tests to cover reset, subscriptions, persisted high score guards, and game-over transitions.
+
+
+### 2026-03-06: Follow-up remediation for lint scope and test compile integrity
+**Decision**: Remove tsconfig narrowing workaround and make in-repo test files compile without blocked external packages.
+**Details**:
+- Replaced `src/test/ErrorBoundary.test.tsx` vitest/testing-library imports with `node:test` + `assert` based checks.
+- Restored `tsconfig.json` to default full-project behavior (removed include/exclude bypasses).
+- Updated `vitest.config.ts` to avoid `vitest/config` import so `tsc --noEmit` can type-check in this environment.
+
+
+### 2026-03-06: Execute `src/test` in default test pipeline
+**Decision**: Promote `src/test/ErrorBoundary.test.tsx` from compile-only coverage to executed coverage in `npm test`.
+**Details**:
+- Updated package scripts so Node test runner executes both `tests/*.test.ts` and `src/test/*.test.tsx`.
+- Verified integrated run now executes 30 tests total (including ErrorBoundary tests).
+- Kept runner dependency surface unchanged (`node:test` + `tsx`) to remain compatible with registry restrictions.
+
+
+### 2026-03-06: Store semantics hardening pass
+**Decision**: Tighten store transition correctness and reject invalid scoring inputs.
+**Details**:
+- Updated `setGameOver(false)` to preserve current play-state rather than force `isPlaying=true`.
+- Added guards to `addScore` for non-finite/non-positive values and normalized fractional points to integer increments.
+- Added regression tests for transition preservation and invalid scoring edge-cases.
+
+
+### 2026-03-06: Mobile swipe control implementation
+**Decision**: Complete P2 task 001 by adding lane-swipe touch input on canvas gameplay.
+**Details**:
+- Added swipe lane interpolation helper (`getLanesFromSwipe`) in `src/utils/input.ts`.
+- Added touch start/move/end handlers in `Game.tsx` to trigger taps across crossed lanes without duplicate lane triggers.
+- Added input tests for forward/reverse/invalid swipe lane interpolation paths.

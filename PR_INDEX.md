@@ -1,168 +1,45 @@
-# PR Index & Code Analysis - Insectiles_HT_v1
+# Branch / PR / Commit Index (Current Repository State)
 
-**Last Updated:** 2026-03-05  
-**Analyst:** OpenCode (Autonomous)
+**Generated:** 2026-03-06 (local repo audit)
+**Branch analyzed:** `work`
 
----
+## Repository Graph Summary
 
-## 📋 Executive Summary
+- Current branch: `work`
+- HEAD commit: `7212a54` (`Merge pull request #9 from FahadIbrahim93/codex/create-execution-plan-and-guidelines`)
+- Total visible local branches: 1 (`work`)
+- Recent merge flow indicates that prior PR streams (#8, #9 and dependent feature commits) have already been integrated into `work`.
 
-| Metric | Value |
-|--------|-------|
-| Total Open PRs | 4 |
-| Total Commits | 5 |
-| Security Critical | 1 (#3) |
-| Foundational | 1 (#1) |
-| UX Improvements | 1 (#2) |
-| Performance | 1 (#4) |
+### Recent commit lineage (newest first)
 
----
+| Commit | Type | Description |
+|---|---|---|
+| `7212a54` | merge | Merge PR #9 execution-plan/guidelines |
+| `5e415bf` | feat/docs | Project-specific universal workflow remediation |
+| `638c43b` | docs | CODEX startup prompt |
+| `dcc3bb0` | merge | Integrated comprehensive 10/10 improvements |
+| `e153d0c` | feat | Readiness improvements |
+| `9802fe7` | fix | ErrorBoundary import for tests |
+| `50c8c5f` | merge | Merge PR #8 comprehensive audit/governance |
+| `00f9560` | refactor | loop state transitions extracted |
+| `974ea03` | feat | ESLint/Prettier/Vitest/CSP/types |
+| `17eaba9` | feat | broad audit fixes + multi-agent system |
 
-## 🔍 PR Detailed Index
+## What appears to be the "best baseline"
 
-### PR #1: Complete Rebuild (FOUNDATIONAL)
-| Property | Value |
-|----------|-------|
-| **Branch** | `feat/rebuild-pinik-pipra-745967440399407299` |
-| **Commits** | 2 (`8e2e04d`, `20c186e`) |
-| **Author** | Jules (google-labs-jules[bot]) |
-| **Status** | Open - Codex Reviewed |
-| **Priority** | 🔴 HIGHEST |
+Based on commit ancestry and integrated merge commits, the **best baseline is the current `work` head (`7212a54`)** because it already contains:
 
-**Files Changed:**
-- `.github/workflows/ci.yml` (NEW - CI/CD)
-- `AGENTS.md` (updated)
-- `AUDIT_REPORT.md` (NEW - 10/10 score)
-- `package.json`, `package-lock.json`
-- `vitest.config.ts` (NEW)
-- `src/App.tsx`
-- `src/components/Game.tsx` (776 → modular)
-- `src/components/ErrorBoundary.tsx` (NEW)
-- `src/constants.ts` (NEW)
-- `src/engine/ObjectPool.ts` (NEW)
-- `src/engine/Renderer.ts` (NEW)
-- `src/store/useGameStore.ts` (NEW)
-- `src/utils/assetLoader.ts`
-- `src/utils/audio.ts`
-- `src/tests/*.test.ts` (NEW - 3 test files)
-- `public/assets/` (14 assets reorganized)
+1. Security and governance corrections from prior PR trains.
+2. Test and lint infrastructure additions.
+3. Workflow and hardening documentation updates.
+4. Consolidated merges that reduce branch divergence risk.
 
-**Key Features Added:**
-- React 19 + Vite + TypeScript
-- Zustand state management
-- Object Pooling (zero GC pressure)
-- Decoupled GameRenderer
-- Global Error Boundary
-- Vitest test suite
-- GitHub Actions CI/CD
+## Risk Flags Found During Audit
 
-**Codex Issues Found:**
-- ⚠️ **P0**: Game loop reads stale state (should use refs/getState())
-- ⚠️ **P2**: Audio bar counter always returns 0
+1. Historical PR index previously stated several PRs as "open" but local git graph already contains merged descendants.
+2. `Game.tsx` had stale state callback risk in engine loop start path (fixed in this change set).
+3. Unit tests around store edge-cases were shallow relative to claimed hardening requirements (expanded in this change set).
 
----
+## Recommendation for Main
 
-### PR #2: Palette - UX Improvements
-| Property | Value |
-|----------|-------|
-| **Branch** | `palette-ux-improvements-18370837234786191409` |
-| **Commits** | 1 (`2edddc6`) |
-| **Author** | Jules |
-| **Status** | Open |
-| **Priority** | 🟡 MEDIUM |
-
-**Changes:**
-1. High Score Persistence (`localStorage` key: `pinik_pipra_highscore`)
-2. Keyboard controls (keys 1-4 for lanes)
-3. Button accessibility (ARIA labels, focus-visible)
-4. Documentation in `.Jules/palette.md`
-
----
-
-### PR #3: Sentinel - Security Fix
-| Property | Value |
-|----------|-------|
-| **Branch** | `fix/security-secret-exposure-2970912838501218187` |
-| **Commits** | 1 (`dab9607`) |
-| **Author** | Jules |
-| **Status** | Open |
-| **Priority** | 🔴 CRITICAL |
-
-**Changes:**
-- Removed hardcoded `GEMINI_API_KEY` from `vite.config.ts`
-- Updated `.env.example` (marked as backend-only)
-- Documentation in `.jules/sentinel.md`
-
----
-
-### PR #4: Bolt - Performance
-| Property | Value |
-|----------|-------|
-| **Branch** | `bolt-render-loop-opt-810275192222613807` |
-| **Commits** | 1 (`e540e17`) |
-| **Author** | Jules |
-| **Status** | Open |
-| **Priority** | 🟢 LOW |
-
-**Changes:**
-- Cache sprites/images on spawn (no per-frame lookups)
-- Replace `forEach` with `for...of` in hot path
-- Make expensive `shadowBlur` conditional
-- Extract `TILE_HEIGHT` constant
-
----
-
-## 🎯 Recommended Merge Order
-
-| Order | PR | Reason |
-|-------|-----|--------|
-| **1** | #3 (Sentinel) | **CRITICAL** - Security vulnerability must be fixed FIRST |
-| **2** | #1 (Rebuild) | Foundation - all other features depend on this code |
-| **3** | #2 (Palette) | UX improvements work on rebuilt architecture |
-| **4** | #4 (Bolt) | Performance optimizations - final polish |
-
----
-
-## 🔧 Issues to Fix Before Merge
-
-### Issue #1: P0 - Game Loop Stale State
-**File:** `src/components/Game.tsx`  
-**Problem:** `requestAnimationFrame(update)` closes over stale `isPlaying`, `gameOver`, `score`, `isFeverMode` values from a single render.
-
-**Fix:** Use refs or `useGameStore.getState()` instead of closed-over values.
-
-### Issue #2: P2 - Audio Bar Counter
-**File:** `src/utils/audio.ts`  
-**Problem:** `bar = Math.floor(this.current16thNote / 16)` always returns 0 because `current16thNote` wraps with `% 16`.
-
-**Fix:** Use a non-wrapping counter for bar/section calculations.
-
----
-
-## 📊 Code Quality Trajectory
-
-```
-Before PRs:     4.2/10 (Code Quality)
-                  ↓
-After PR #3:    4.2/10 (Security fixed)
-                  ↓  
-After PR #1:    10/10 (Claims Jules)
-                  ↓
-After PR #2:    10/10 + UX
-                  ↓
-After PR #4:    10/10 + UX + Perf
-```
-
----
-
-## 🤖 Agent Attribution
-
-| Agent | Contributions |
-|-------|--------------|
-| **Jules** | All 4 PRs (complete rebuild, UX, security, performance) |
-| **Codex** | PR #1 review (found 2 bugs) |
-| **OpenCode** | Analysis, indexing, issue fixes (this document) |
-
----
-
-*Document generated by OpenCode - Autonomous Analysis*
+If `main` is behind `work`, fast-forward or merge `work` into `main` after CI passes. This yields the most complete and internally consistent code line currently available.

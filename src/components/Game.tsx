@@ -3,7 +3,7 @@ import { audio } from '../utils/audio';
 import { useGameStore } from '../store/useGameStore';
 import { ASSET_PATHS, GAME_SETTINGS } from '../constants';
 import { preloadAssets } from '../utils/assetLoader';
-import { getLaneFromClientX } from '../utils/input';
+import { getLaneFromClientX, getLanesFromSwipe } from '../utils/input';
 import { GameEngine } from '../utils/gameEngine';
 import GameHud from './GameHud';
 import GameOverlay from './GameOverlay';
@@ -20,6 +20,8 @@ export default function Game() {
   const [assetsLoaded, setAssetsLoaded] = useState(false);
   const imagesRef = useRef<HTMLImageElement[]>([]);
   const videosRef = useRef<HTMLVideoElement[]>([]);
+  const swipeStartLaneRef = useRef<number | null>(null);
+  const swipeVisitedLanesRef = useRef<Set<number>>(new Set());
 
   const stopLoop = () => {
     engineRef.current?.stop();
@@ -54,10 +56,10 @@ export default function Game() {
     startStoreGame();
 
     const callbacks = {
-      getScore: () => score,
-      getIsFeverMode: () => isFeverMode,
-      getIsPlaying: () => isPlaying,
-      getGameOver: () => gameOver,
+      getScore: () => useGameStore.getState().score,
+      getIsFeverMode: () => useGameStore.getState().isFeverMode,
+      getIsPlaying: () => useGameStore.getState().isPlaying,
+      getGameOver: () => useGameStore.getState().gameOver,
       setFeverMode: (active: boolean) => setFeverMode(active),
       addScore: (points: number) => addScore(points),
       setGameOver: (over: boolean) => setGameOver(over),
@@ -83,7 +85,7 @@ export default function Game() {
     engineRef.current.start();
   };
 
-  const handleInteraction = (clientX: number, clientY: number) => {
+  const handleInteraction = (clientX: number) => {
     const { isPlaying, gameOver } = useGameStore.getState();
     if (!isPlaying || gameOver) return;
     
@@ -91,7 +93,6 @@ export default function Game() {
     if (!canvas) return;
     
     const rect = canvas.getBoundingClientRect();
-    const laneWidth = canvas.width / GAME_SETTINGS.LANE_COUNT;
     const clickedLane = getLaneFromClientX(clientX, rect.left, canvas.width, GAME_SETTINGS.LANE_COUNT);
     if (clickedLane === -1) return;
     
@@ -137,6 +138,47 @@ export default function Game() {
     };
   }, []);
 
+  const handleTouchStart = (clientX: number) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const lane = getLaneFromClientX(clientX, rect.left, canvas.width, GAME_SETTINGS.LANE_COUNT);
+    if (lane === -1) return;
+
+    swipeStartLaneRef.current = lane;
+    swipeVisitedLanesRef.current = new Set([lane]);
+    handleInteraction(clientX);
+  };
+
+  const handleTouchMove = (clientX: number) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const startLane = swipeStartLaneRef.current;
+    if (startLane === null) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const currentLane = getLaneFromClientX(clientX, rect.left, canvas.width, GAME_SETTINGS.LANE_COUNT);
+    if (currentLane === -1) return;
+
+    const crossedLanes = getLanesFromSwipe(startLane, currentLane);
+    for (const lane of crossedLanes) {
+      if (swipeVisitedLanesRef.current.has(lane)) continue;
+      swipeVisitedLanesRef.current.add(lane);
+      const laneWidth = canvas.width / GAME_SETTINGS.LANE_COUNT;
+      const virtualClientX = rect.left + lane * laneWidth + laneWidth / 2;
+      handleInteraction(virtualClientX);
+    }
+
+    swipeStartLaneRef.current = currentLane;
+  };
+
+  const handleTouchEnd = () => {
+    swipeStartLaneRef.current = null;
+    swipeVisitedLanesRef.current.clear();
+  };
+
   if (!assetsLoaded) {
     return (
       <div className="flex items-center justify-center w-full h-full bg-black text-white">
@@ -153,8 +195,11 @@ export default function Game() {
         data-testid="game-canvas"
         ref={canvasRef}
         className="block w-full h-full touch-none"
-        onMouseDown={(e) => handleInteraction(e.clientX, e.clientY)}
-        onTouchStart={(e) => handleInteraction(e.touches[0].clientX, e.touches[0].clientY)}
+        onMouseDown={(e) => handleInteraction(e.clientX)}
+        onTouchStart={(e) => handleTouchStart(e.touches[0].clientX)}
+        onTouchMove={(e) => handleTouchMove(e.touches[0].clientX)}
+        onTouchEnd={handleTouchEnd}
+        onTouchCancel={handleTouchEnd}
       />
 
       <GameOverlay isPlaying={isPlaying} gameOver={gameOver} score={score} startGame={startGame} />

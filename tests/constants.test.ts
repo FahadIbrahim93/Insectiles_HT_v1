@@ -8,7 +8,9 @@ test('game settings include fever threshold and lane count', () => {
   assert.ok(GAME_SETTINGS.MAX_SPEED > GAME_SETTINGS.INITIAL_SPEED);
 });
 
-test('asset path registry includes expected total assets', () => {
-  assert.equal(Object.keys(ASSET_PATHS.IMAGES).length, 12);
+test('asset path registry includes bug sprites and expected minimum totals', () => {
+  assert.ok(Object.keys(ASSET_PATHS.IMAGES).length >= 17);
   assert.equal(Object.keys(ASSET_PATHS.ANIMATIONS).length, 2);
+  assert.ok(ASSET_PATHS.IMAGES.BUG_1.endsWith('bug-1.png'));
+  assert.ok(ASSET_PATHS.IMAGES.BUG_1_MULTIVIEW.endsWith('bug-1-multiview.png'));
 });

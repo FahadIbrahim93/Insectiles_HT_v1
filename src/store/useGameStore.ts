@@ -45,8 +45,10 @@ let state: GameState = {
   feverProgress: 0,
 
   addScore: (points) => {
+    if (!Number.isFinite(points) || points <= 0) return;
+
     useGameStore.setState((current) => {
-      const newScore = current.score + points;
+      const newScore = current.score + Math.floor(points);
       const newHighScore = Math.max(newScore, current.highScore);
       if (newHighScore > current.highScore) {
         localStorage.setItem(HIGHSCORE_KEY, newHighScore.toString());
@@ -59,7 +61,10 @@ let state: GameState = {
     });
   },
 
-  setGameOver: (status) => useGameStore.setState({ gameOver: status, isPlaying: !status }),
+  setGameOver: (status) => useGameStore.setState((current) => ({
+    gameOver: status,
+    isPlaying: status ? false : current.isPlaying,
+  })),
 
   startGame: () => useGameStore.setState({
     isPlaying: true,

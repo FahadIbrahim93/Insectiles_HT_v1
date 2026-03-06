@@ -21,7 +21,7 @@
 
 | ID | Task | Type | Agent | Status |
 |----|------|------|-------|--------|
-| 001 | Add mobile touch controls for swiping insects | Frontend | OPEN | OPEN |
+| 001 | Add mobile touch controls for swiping insects | Frontend | CODEX | DONE |
 | 002 | Implement combo multiplier system | Backend | OPEN | OPEN |
 | 003 | Add particle explosion effects on catch | Frontend | OPEN | OPEN |
 | 004 | Create power-up system (shield, slow-mo) | Backend | OPEN | OPEN |
@@ -65,6 +65,11 @@
 | INF-004 | Update package.json for Playwright | CODEX | 2026-03-07 | Added test:e2e, test:e2e:ui, test:e2e:debug scripts |
 | OPS-001 | Code quality verification | CODEX | 2026-03-07 | Build & 20 unit tests passing, strict TypeScript |
 | INF-005 | Upgrade Universal Workflow Pinboard to project-specific executable playbook | CODEX | 2026-03-05 | Replaced generic template with complete plan, scrutiny, sweep, hardening, and closure artifacts |
+| INF-006 | Stabilize game loop state reads + expand store edge-case tests + refresh branch/PR audit index | CODEX | 2026-03-06 | Fixed stale state callback reads, added 7 additional store edge-case tests, rebuilt PR_INDEX for current graph |
+| INF-007 | Remove lint scope workaround by making ErrorBoundary tests compile without external blocked deps | CODEX | 2026-03-06 | Rewrote src/test/ErrorBoundary.test.tsx to node:test assertions, restored tsconfig default scope, made vitest config compile-safe |
+| INF-008 | Execute src/test suite in default npm test pipeline and verify integrated test coverage | CODEX | 2026-03-06 | Updated npm test/test:watch to run tests/*.test.ts and src/test/*.test.tsx, verified 30 passing tests |
+| INF-009 | Harden store state semantics (gameOver transitions + score input validation) | CODEX | 2026-03-06 | Prevented setGameOver(false) from forcing play state and ignored invalid/non-positive scores with new regression tests |
+| FEAT-001 | Add mobile swipe lane controls | CODEX | 2026-03-06 | Added touch swipe handling across lanes with deduped lane hits + input utility tests |
 
 ---
 
