@@ -23,3 +23,8 @@ Single-source execution evidence log for autonomous delivery.
 - [x] Closeout statement reached
 
 Status: **All issues closed. Ready.**
+
+
+### Merge Readiness
+- Canonical process docs normalized to reduce conflict churn (`TASK_POOL.md`, `SCRUM.md`, `UNIVERSAL_WORKFLOW_PINBOARD.md`).
+- Verification gates re-run on normalized state.

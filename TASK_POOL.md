@@ -21,21 +21,13 @@
 
 | ID | Task | Type | Agent | Status |
 |----|------|------|-------|--------|
-| 001 | Add mobile touch controls for swiping insects | Frontend | CODEX | DONE |
-| 002 | Implement combo multiplier system | Backend | CODEX | DONE |
-| 003 | Add particle explosion effects on catch | Frontend | CODEX | DONE |
-| 004 | Create power-up system (shield, slow-mo) | Backend | CODEX | DONE |
-| 005 | Add leaderboard UI | Frontend | CODEX | DONE |
-| 006 | Implement save/load game state | Backend | CODEX | DONE |
+| - | - | - | - | No open P2 tasks |
 
 ### P3: Polish
 
 | ID | Task | Type | Agent | Status |
 |----|------|------|-------|--------|
-| 007 | Add sound toggle button | Frontend | CODEX | DONE |
-| 008 | Improve loading screen animation | Frontend | CODEX | DONE |
-| 009 | Add retina display support | Frontend | CODEX | DONE |
-| 010 | Optimize bundle size | Backend | CODEX | DONE |
+| - | - | - | - | No open P3 tasks |
 
 ---
 
@@ -76,6 +68,15 @@
 | 009 | Add retina display support | CODEX | 2026-03-05 | Added DPR-aware canvas sizing + transform scaling |
 | 010 | Optimize bundle size | CODEX | 2026-03-05 | Added lazy-loaded Game component via React Suspense |
 | INF-006 | Stabilize lint gate and fix runtime regressions after gameplay sweep | CODEX | 2026-03-05 | Added lint-specific tsconfig, fixed DPR canvas scaling, and respected sound toggle for power-up SFX |
+
+---
+
+
+## Merge-Ready Baseline
+
+- Completed tasks (001-010, INF-001..INF-006) are intentionally tracked **only** in `Completed` to reduce merge conflicts.
+- Keep `Available Tasks` limited to OPEN work items.
+- When resolving PR conflicts, prefer preserving latest `Completed` rows by date.
 
 ---
 

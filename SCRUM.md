@@ -106,3 +106,10 @@ This project uses an **Autonomous Multi-Agent System** where:
 - Adopted `EXECUTION_REPORT.md` as single-source verification report.
 - Made UTC started/completed timestamps mandatory in task operations.
 - Promoted `npm run test` to mandatory pre-commit gate with lint/build.
+
+### 2026-03-05: Merge conflict minimization policy
+**Decision**: Normalize planning docs for conflict-resistant merges
+**Details**:
+- Keep `TASK_POOL.md` Available sections OPEN-only; archive completed work in Completed.
+- Preserve chronological append-only updates in `SCRUM.md`.
+- Use `EXECUTION_REPORT.md` as evidence source during conflict resolution.
