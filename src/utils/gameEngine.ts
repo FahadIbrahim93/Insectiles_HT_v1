@@ -15,6 +15,8 @@ export interface Insect {
   frameCount: number;
   frameAdvanceCounter: number;
   frameAdvanceRate: number;
+  useSpriteSheet: boolean;
+  spriteRow: number;
   // Hit animation state (AAA-004)
   hitScale?: number;
   hitAlpha?: number;
@@ -82,8 +84,10 @@ export interface EngineCallbacks {
   activateShield: () => void;
   activateSlowMo: (durationMs: number) => void;
   playFeverActivation: () => void;
-  playTapSound: (isFever: boolean) => void;
+  playTapSound: (lane: number, isFever: boolean) => void;
   playErrorSound: () => void;
+  triggerHaptic: (pattern?: number | number[]) => void;
+  getReducedMotion: () => boolean;
   stopBgm: () => void;
 }
 
@@ -115,6 +119,8 @@ export class GameEngine {
   // Animation configuration (AAA-002)
   private static readonly WALK_FRAME_COUNT = 8;
   private static readonly WALK_FRAME_RATE = 5;
+  private static readonly WALK_SPRITE_ROWS = 4;
+  private static readonly WALK_SPRITE_PATH = 'ant-walk-cycle.svg';
 
   // Lane-specific colors for particles (AAA-005)
   private static readonly LANE_COLORS = [
@@ -123,6 +129,9 @@ export class GameEngine {
     'rgba(150,255,150,ALPHA)',  // Lane 2: Green
     'rgba(255,220,100,ALPHA)',  // Lane 3: Gold
   ];
+
+  private static readonly MAX_PARTICLES = 280;
+  private particlePool: Particle[] = [];
 
   private requestRef: number | undefined;
   private isRunning = false;
@@ -156,6 +165,7 @@ export class GameEngine {
     this.powerUps = [];
     this.psyEffects = [];
     this.particles = [];
+    this.particlePool = [];
     this.scorePopups = [];
     this.speed = this.config.initialSpeed;
     this.frames = 0;
@@ -251,10 +261,11 @@ export class GameEngine {
       spriteIndex = GameEngine.SPRITE_FEVER_START + feverOffset;
       cachedImage = this.images[spriteIndex];
     } else {
-      // Use FALLING_1-4 (indices 0-3) for normal mode
-      const normalOffset = Math.floor(Math.random() * GameEngine.SPRITE_COUNT);
-      spriteIndex = GameEngine.SPRITE_FALLING_START + normalOffset;
-      cachedImage = this.images[spriteIndex];
+      // Use generated 8x4 sprite sheet for walk cycle in normal mode
+      cachedImage = this.images.find((img) => img.src.includes(GameEngine.WALK_SPRITE_PATH));
+      const fallbackOffset = Math.floor(Math.random() * GameEngine.SPRITE_COUNT);
+      spriteIndex = cachedImage ? -1 : GameEngine.SPRITE_FALLING_START + fallbackOffset;
+      if (!cachedImage) cachedImage = this.images[spriteIndex];
     }
 
     this.insects.push({
@@ -269,6 +280,8 @@ export class GameEngine {
       frameCount: GameEngine.WALK_FRAME_COUNT,
       frameAdvanceCounter: 0,
       frameAdvanceRate: GameEngine.WALK_FRAME_RATE,
+      useSpriteSheet: !isFeverMode,
+      spriteRow: lane % GameEngine.WALK_SPRITE_ROWS,
       hitScale: 1,
       hitAlpha: 1,
       isHit: false,
@@ -297,8 +310,15 @@ export class GameEngine {
     const next: Particle[] = [];
     for (const particle of this.particles) {
       const life = particle.life + 1;
-      if (life >= particle.maxLife) continue;
-      next.push({ ...particle, life, x: particle.x + particle.vx, y: particle.y + particle.vy, vy: particle.vy + 0.08 });
+      if (life >= particle.maxLife) {
+        this.particlePool.push(particle);
+        continue;
+      }
+      particle.life = life;
+      particle.x += particle.vx;
+      particle.y += particle.vy;
+      particle.vy += 0.08;
+      next.push(particle);
     }
     this.particles = next;
   }
@@ -349,6 +369,7 @@ export class GameEngine {
     if (!ctx) return;
 
     const isFeverMode = this.callbacks.getIsFeverMode();
+    const reducedMotion = this.callbacks.getReducedMotion();
 
     // Clear with dark background (no distracting images)
     ctx.fillStyle = '#000';
@@ -386,8 +407,19 @@ export class GameEngine {
 
     // Draw psychedelic overlay in fever mode
     if (isFeverMode) {
-      ctx.fillStyle = `hsla(${this.hue}, 80%, 20%, 0.3)`;
+      const gradient = ctx.createLinearGradient(0, 0, this.canvas.width, this.canvas.height);
+      gradient.addColorStop(0, `hsla(${this.hue}, 90%, 55%, ${reducedMotion ? 0.15 : 0.28})`);
+      gradient.addColorStop(0.5, `hsla(${(this.hue + 60) % 360}, 90%, 50%, ${reducedMotion ? 0.1 : 0.24})`);
+      gradient.addColorStop(1, `hsla(${(this.hue + 140) % 360}, 95%, 45%, ${reducedMotion ? 0.14 : 0.3})`);
+      ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+      if (!reducedMotion) {
+        const feverPulse = 0.35 + Math.sin(this.frames * 0.14) * 0.15;
+        ctx.strokeStyle = `hsla(${(this.hue + 200) % 360}, 100%, 70%, ${feverPulse})`;
+        ctx.lineWidth = 6;
+        ctx.strokeRect(3, 3, this.canvas.width - 6, this.canvas.height - 6);
+      }
     }
 
     // Draw insects with lively wobble (not rotation)
@@ -396,7 +428,7 @@ export class GameEngine {
       if (!img) continue;
 
       const size = this.config.tileHeight * (isFeverMode ? 1.2 : 0.8);
-      const wobble = Math.sin(this.frames * 0.1 + insect.id) * 5; // Slight wobble
+      const wobble = reducedMotion ? 0 : Math.sin(this.frames * 0.1 + insect.id) * 5; // Slight wobble
 
       // AAA-003: Draw shadow under insect for depth
       const shadowY = insect.y + this.config.tileHeight + 10;
@@ -417,7 +449,7 @@ export class GameEngine {
       ctx.translate(centerX, centerY);
 
       // Subtle scale pulse for "breathing" life
-      const pulse = 1 + Math.sin(this.frames * 0.15 + insect.id) * 0.05;
+      const pulse = reducedMotion ? 1 : 1 + Math.sin(this.frames * 0.15 + insect.id) * 0.05;
       ctx.scale(pulse, pulse);
 
       // AAA-004: Apply hit animation (squash & stretch)
@@ -431,7 +463,15 @@ export class GameEngine {
         ctx.shadowColor = `hsla(${this.hue}, 100%, 50%, 1)`;
       }
 
-      ctx.drawImage(img, -size / 2, -size / 2, size, size);
+      if (insect.useSpriteSheet && img.naturalWidth > 0 && img.naturalHeight > 0) {
+        const frameWidth = img.naturalWidth / GameEngine.WALK_FRAME_COUNT;
+        const frameHeight = img.naturalHeight / GameEngine.WALK_SPRITE_ROWS;
+        const sx = Math.floor(insect.frameIndex % GameEngine.WALK_FRAME_COUNT) * frameWidth;
+        const sy = Math.floor(insect.spriteRow % GameEngine.WALK_SPRITE_ROWS) * frameHeight;
+        ctx.drawImage(img, sx, sy, frameWidth, frameHeight, -size / 2, -size / 2, size, size);
+      } else {
+        ctx.drawImage(img, -size / 2, -size / 2, size, size);
+      }
       ctx.restore();
     }
 
@@ -440,7 +480,7 @@ export class GameEngine {
       const centerY = powerUp.y + this.config.tileHeight * 0.2;
       ctx.save();
       ctx.translate(centerX, centerY);
-      ctx.rotate(this.frames * 0.04);
+      if (!reducedMotion) ctx.rotate(this.frames * 0.04);
       ctx.font = '42px serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
@@ -475,7 +515,8 @@ export class GameEngine {
       const alpha = 1 - popup.life / popup.maxLife;
       ctx.save();
       ctx.translate(popup.x, popup.y);
-      ctx.scale(popup.scale, popup.scale);
+      const popupScale = reducedMotion ? 1 : popup.scale;
+      ctx.scale(popupScale, popupScale);
       ctx.globalAlpha = alpha;
       ctx.font = 'bold 24px Arial';
       ctx.fillStyle = popup.color;
@@ -501,7 +542,8 @@ export class GameEngine {
       }
       this.createExplosion(lane, tappedPowerUp.y, 'rgba(130,255,255,ALPHA)');
       if (this.callbacks.getSoundEnabled()) {
-        this.callbacks.playTapSound(true);
+        this.callbacks.playTapSound(lane, true);
+        this.callbacks.triggerHaptic([8, 20, 8]);
       }
       return;
     }
@@ -509,6 +551,7 @@ export class GameEngine {
     const topInsect = findTopTargetInLane(this.insects, lane);
     if (!topInsect) {
       this.callbacks.recordMiss();
+      this.callbacks.triggerHaptic(12);
       return;
     }
 
@@ -533,8 +576,27 @@ export class GameEngine {
     this.createScorePopup(hitX, hitY, totalScore, comboMultiplier);
 
     if (this.callbacks.getSoundEnabled()) {
-      this.callbacks.playTapSound(this.callbacks.getIsFeverMode());
+      this.callbacks.playTapSound(lane, this.callbacks.getIsFeverMode());
+      this.callbacks.triggerHaptic(this.callbacks.getIsFeverMode() ? [12, 25, 12] : 18);
     }
+  }
+
+
+  private emitParticle(particle: Particle): void {
+    if (this.particles.length >= GameEngine.MAX_PARTICLES) return;
+    const reused = this.particlePool.pop();
+    if (reused) {
+      reused.x = particle.x;
+      reused.y = particle.y;
+      reused.vx = particle.vx;
+      reused.vy = particle.vy;
+      reused.life = particle.life;
+      reused.maxLife = particle.maxLife;
+      reused.color = particle.color;
+      this.particles.push(reused);
+      return;
+    }
+    this.particles.push(particle);
   }
 
   private createPsyEffect(x: number, y: number): void {
@@ -558,7 +620,7 @@ export class GameEngine {
       const angle = (Math.PI * 2 * i) / 16 + Math.random() * 0.3;
       const speed = 1.5 + Math.random() * 3;
       const useLaneColor = Math.random() > 0.3;
-      this.particles.push({
+      this.emitParticle({
         x: centerX,
         y: centerY,
         vx: Math.cos(angle) * speed,
@@ -576,7 +638,7 @@ export class GameEngine {
     const centerX = insect.lane * laneWidth + laneWidth / 2;
     const laneColor = GameEngine.LANE_COLORS[insect.lane % GameEngine.LANE_COLORS.length];
 
-    this.particles.push({
+    this.emitParticle({
       x: centerX + (Math.random() - 0.5) * 20,
       y: insect.y + this.config.tileHeight * 0.8,
       vx: (Math.random() - 0.5) * 0.5,

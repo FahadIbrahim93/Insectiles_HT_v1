@@ -83,7 +83,12 @@ const persistState = (next: GameState) => {
     leaderboard: next.leaderboard.slice(0, MAX_LEADERBOARD),
     soundEnabled: next.soundEnabled,
   };
-  localStorage.setItem(PERSIST_KEY, JSON.stringify(payload));
+
+  try {
+    localStorage.setItem(PERSIST_KEY, JSON.stringify(payload));
+  } catch {
+    // Ignore storage quota/privacy-mode failures and keep in-memory state alive.
+  }
 };
 
 const persisted = readPersistedState();

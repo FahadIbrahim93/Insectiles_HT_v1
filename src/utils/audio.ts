@@ -12,7 +12,8 @@ export class AudioEngine {
   filterCutoff = 1000;
   filterSweepDir = 1;
   noiseBuffer: AudioBuffer | null = null;
-  notes = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25];
+  notes = [261.63, 293.66, 329.63, 392.0, 440.0, 523.25];
+  laneNotes = [523.25, 659.25, 783.99, 1046.5];
   noteIndex = 0;
   muted = false;
 
@@ -25,7 +26,9 @@ export class AudioEngine {
 
   init() {
     if (this.ctx) return;
-    this.ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const AudioContextCtor = window.AudioContext ?? ((window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext);
+    if (!AudioContextCtor) return;
+    this.ctx = new AudioContextCtor();
     this.masterGain = this.ctx.createGain();
     this.masterGain.connect(this.ctx.destination);
     this.masterGain.gain.value = 0.5;
@@ -199,7 +202,7 @@ export class AudioEngine {
     if (this.timerID !== null) { window.clearTimeout(this.timerID); this.timerID = null; }
   }
 
-  playTapSound(isFever = false) {
+  playTapSound(lane = 0, isFever = false) {
     if (this.muted) return;
     if (!this.ctx || !this.masterGain) return;
     const osc = this.ctx.createOscillator();
@@ -209,9 +212,10 @@ export class AudioEngine {
       osc.frequency.exponentialRampToValueAtTime(1760, this.ctx.currentTime + 0.1);
       gain.gain.setValueAtTime(0.8, this.ctx.currentTime);
     } else {
-      const freq = this.notes[this.noteIndex % this.notes.length] ?? 261.63;
-      this.noteIndex++; osc.type = 'triangle';
-      osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+      const laneFreq = this.laneNotes[Math.max(0, Math.min(this.laneNotes.length - 1, lane))] ?? this.notes[this.noteIndex % this.notes.length] ?? 261.63;
+      this.noteIndex++;
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(laneFreq, this.ctx.currentTime);
       gain.gain.setValueAtTime(0.5, this.ctx.currentTime);
     }
     gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.2);

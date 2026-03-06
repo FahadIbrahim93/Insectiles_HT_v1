@@ -18,6 +18,7 @@ export const ASSET_PATHS = {
     BUG_3: '/assets/images/bug-3.png',
     BUG_4: '/assets/images/bug-4.png',
     BUG_1_MULTIVIEW: '/assets/images/bug-1-multiview.png',
+    ANT_WALK_SPRITE: '/assets/images/ant-walk-cycle.svg',
   },
   ANIMATIONS: {
     IDLE_1: '/assets/animations/Pinik_pipra_idle_animation_9bcd48c96f.mp4',

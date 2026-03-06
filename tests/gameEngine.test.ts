@@ -25,6 +25,8 @@ const mockCallbacks = {
   playFeverActivation: () => {},
   playTapSound: () => {},
   playErrorSound: () => {},
+  triggerHaptic: () => {},
+  getReducedMotion: () => false,
   stopBgm: () => {},
 };
 
