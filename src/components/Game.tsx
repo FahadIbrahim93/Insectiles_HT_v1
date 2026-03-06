@@ -9,7 +9,7 @@ import { logger } from '../utils/logger';
 import { PerfSampler, type PerfSnapshot } from '../utils/perfSampler';
 import { safeStorage } from '../utils/safeStorage';
 import { isEnabledFlag } from '../utils/flags';
-if (typeof window !== "undefined") { (window as any).useGameStore = useGameStore; }
+if (typeof window !== "undefined") { (window as any).useGameStore = useGameStore; (window as any).__STORE__ = useGameStore; }
 import GameHud from './GameHud';
 import GameOverlay from './GameOverlay';
 

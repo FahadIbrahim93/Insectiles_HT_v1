@@ -19,7 +19,7 @@ export default function GameOverlay({
   if (isPlaying && !gameOver) return null;
 
   return (
-    <div className="absolute inset-0 z-30 flex flex-col items-center justify-center p-8 backdrop-blur-md bg-black/80 animate-fade-in">
+    <div data-testid="game-overlay" className="absolute inset-0 z-30 flex flex-col items-center justify-center p-8 backdrop-blur-md bg-black/80 animate-fade-in">
       <div className="relative w-full max-w-sm flex flex-col items-center gap-10">
 
         {/* Title/Logo */}
@@ -36,7 +36,7 @@ export default function GameOverlay({
             <p className="mt-4 text-white/40 font-mono text-xs uppercase tracking-[0.4em]">Psychedelic Ant Rush</p>
           </div>
         ) : (
-          <div className="flex flex-col items-center gap-2 animate-pop-in">
+          <div data-testid="game-over" className="flex flex-col items-center gap-2 animate-pop-in">
             <span className="text-white/40 font-mono text-sm uppercase tracking-widest">Game Over</span>
             <div className="relative">
               <span className="text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-500 to-purple-600 drop-shadow-[0_0_25px_rgba(244,114,182,0.4)]">
@@ -56,7 +56,7 @@ export default function GameOverlay({
         >
           <div className="w-full h-full flex items-center justify-center rounded-full bg-black/90 group-hover:bg-transparent transition-colors">
             <span className="text-xl font-bold tracking-widest uppercase text-white">
-              {gameOver ? 'Try Again' : 'Enter the Trip'}
+              {gameOver ? 'START AGAIN' : 'START THE TRIP'}
             </span>
           </div>
         </button>

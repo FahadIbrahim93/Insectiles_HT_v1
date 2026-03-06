@@ -63,7 +63,7 @@ export default function GameHud({
                 COMBO x{comboMultiplier}
               </span>
               {isFeverMode && (
-                <span className="text-fuchsia-400 font-bold text-xs animate-pulse drop-shadow-[0_0_5px_#f472b6]">
+                <span data-testid="fever-indicator" className="text-fuchsia-400 font-bold text-xs animate-pulse drop-shadow-[0_0_5px_#f472b6]">
                   FEVER ACTIVATED
                 </span>
               )}
@@ -101,7 +101,7 @@ export default function GameHud({
         </div>
       </div>
 
-      <div className="mt-4 relative h-1.5 w-full bg-white/5 rounded-full overflow-hidden border border-white/5 backdrop-blur-md">
+      <div data-testid="fever-progress" className="mt-4 relative h-1.5 w-full bg-white/5 rounded-full overflow-hidden border border-white/5 backdrop-blur-md">
         <div
           className={`h-full transition-all duration-500 ease-out ${
             isFeverMode ? "bg-gradient-to-r from-fuchsia-500 via-purple-500 to-cyan-400 animate-shimmer shadow-[0_0_15px_#f472b6]" : "bg-gradient-to-r from-cyan-500 to-blue-500 opacity-60"
