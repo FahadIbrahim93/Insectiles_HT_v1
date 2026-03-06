@@ -31,11 +31,11 @@ This is the current single-source execution board aligned with repository realit
 
 | Dimension | Score (1-10) | Evidence |
 |---|---:|---|
-| Functional correctness | 10.0 | `npm test` passes 70/70. |
+| Functional correctness | 10.0 | `npm test` passes 77/77. |
 | Code quality/readability | 9.4 | Engine/store/utils are modular and type-safe; main gameplay file still moderately dense but maintainable. |
 | Performance | 9.6 | `npm run perf:smoke` passes within 60 FPS budget. |
 | Security | 9.2 | No hardcoded runtime secret in committed config; audit endpoint check blocked by environment. |
-| Testing | 9.5 | Node test coverage run reports 84.89% lines overall after added edge-case regressions. |
+| Testing | 9.5 | Node test coverage run reports 85.85% lines overall after added edge-case regressions. |
 | Architecture | 9.4 | Clear separation: store, engine loop, utility modules, telemetry hooks. |
 | Compliance/process | 9.5 | Task pool + completion artifacts + release docs are maintained. |
 | Business/readiness | 8.8 | Code-ready; external deployment and device validation remain pending. |
@@ -62,7 +62,7 @@ This is the current single-source execution board aligned with repository realit
 |---|---|---|---|
 | 1 | Lint/build/test/perf smoke | `npm run lint`, `npm run build`, `npm test`, `npm run perf:smoke` all pass | ✅ Completed |
 | 2 | Audio progression fix + regression tests | Implemented absolute `total16thNotes` counter and added 3 audio edge-case tests | ✅ Completed |
-| 3 | Coverage expansion verification | `npm run test:coverage` pass; overall line coverage 84.89% | ✅ Completed |
+| 3 | Coverage expansion verification | `npm run test:coverage` pass; overall line coverage 85.85% | ✅ Completed |
 | 4 | Browser E2E readiness | `npm run e2e:preflight` fails (no browser binary); install remains blocked by proxy/apt 403 | ⚠️ External blocker |
 | 5 | Security advisory check | `npm run audit:prod` fails with npm advisory endpoint 403 | ⚠️ External blocker |
 | 6 | Governance reconciliation | Updated pinboard + taskboard artifacts with current truth state | ✅ Completed |
@@ -83,8 +83,8 @@ This is the current single-source execution board aligned with repository realit
 ## 🧪 Verification & Coverage
 
 ### Current evidence snapshot
-- Tests: 70 passed, 0 failed.
-- Coverage: **84.89% line**, 85.53% branch, 81.78% functions.
+- Tests: 77 passed, 0 failed.
+- Coverage: **85.85% line**, 85.53% branch, 81.78% functions.
 - Performance smoke: pass (avg frame time below 16.67ms budget).
 
 ### Remaining verification gap
@@ -98,8 +98,8 @@ This is the current single-source execution board aligned with repository realit
 |---|---|---|
 | Type safety (`npm run lint`) | ✅ | Pass |
 | Production build (`npm run build`) | ✅ | Pass |
-| Unit/integration tests (`npm test`) | ✅ | 70/70 pass |
-| Coverage run (`npm run test:coverage`) | ✅ | 84.89% line coverage |
+| Unit/integration tests (`npm test`) | ✅ | 77/77 pass |
+| Coverage run (`npm run test:coverage`) | ✅ | 85.85% line coverage |
 | Perf smoke (`npm run perf:smoke`) | ✅ | Pass |
 | Playwright browser install | ⚠️ | apt/proxy 403 blocker |
 | Browser E2E run | ⚠️ | blocked by browser install |

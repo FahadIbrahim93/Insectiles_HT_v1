@@ -241,3 +241,140 @@ test('scheduleNote uses absolute bar counter for arrangement progression', () =>
   assert.equal(arpCalls, 1);
   assert.equal(lastBar, 24);
 });
+
+test('scheduler is a no-op without audio context', () => {
+  const audio = new AudioEngine();
+  audio.scheduler();
+  assert.equal(audio.timerID, null);
+});
+
+test('scheduler schedules notes until lookahead horizon and stores timer id', () => {
+  const audio = new AudioEngine();
+  const { ctx } = createMockAudioContext();
+  ctx.currentTime = 2;
+  audio.ctx = ctx as unknown as AudioContext;
+  audio.nextNoteTime = 0;
+  audio.scheduleAheadTime = 0.1;
+  audio.lookahead = 33;
+
+  let scheduled = 0;
+  let timeoutDelay = 0;
+  (globalThis as { window: unknown }).window = {
+    setTimeout: (cb: () => void, delay: number) => {
+      timeoutDelay = delay;
+      void cb;
+      return 321;
+    },
+  };
+
+  audio.scheduleNote = () => {
+    scheduled += 1;
+  };
+
+  audio.scheduler();
+
+  assert.ok(scheduled > 0);
+  assert.equal(audio.timerID, 321);
+  assert.equal(timeoutDelay, 33);
+});
+
+test('playBgm does not start when muted', () => {
+  const audio = new AudioEngine();
+  const { ctx } = createMockAudioContext();
+  audio.ctx = ctx as unknown as AudioContext;
+  audio.masterGain = { gain: createParam(0.5) } as unknown as GainNode;
+  audio.muted = true;
+
+  let schedulerCalls = 0;
+  audio.scheduler = () => {
+    schedulerCalls += 1;
+  };
+
+  audio.playBgm();
+
+  assert.equal(audio.isPlaying, false);
+  assert.equal(schedulerCalls, 0);
+});
+
+test('playTapSound in fever mode keeps noteIndex stable', () => {
+  const audio = new AudioEngine();
+  const { ctx } = createMockAudioContext();
+  audio.ctx = ctx as unknown as AudioContext;
+  audio.masterGain = { gain: createParam(0.5), connect: () => undefined } as unknown as GainNode;
+  audio.noteIndex = 5;
+
+  audio.playTapSound(2, true);
+
+  assert.equal(audio.noteIndex, 5);
+});
+
+test('playErrorSound returns early when muted', () => {
+  const audio = new AudioEngine();
+  const { ctx } = createMockAudioContext();
+  audio.ctx = ctx as unknown as AudioContext;
+  audio.masterGain = { gain: createParam(0.5), connect: () => undefined } as unknown as GainNode;
+  audio.muted = true;
+
+  audio.playErrorSound();
+  assert.equal(audio.muted, true);
+});
+
+test('scheduleNote section 0 triggers kick, bass, hat, and acid from beat/random', () => {
+  const audio = new AudioEngine();
+  const { ctx } = createMockAudioContext();
+  audio.ctx = ctx as unknown as AudioContext;
+  audio.masterGain = { gain: createParam(0.5), connect: () => undefined } as unknown as GainNode;
+  audio.total16thNotes = 0;
+
+  let kick = 0;
+  let bass = 0;
+  let hat = 0;
+  let acid = 0;
+  audio.playKick = () => { kick += 1; };
+  audio.playBass = () => { bass += 1; };
+  audio.playHat = () => { hat += 1; };
+  audio.playAcid = () => { acid += 1; };
+  audio.playSnare = () => undefined;
+  audio.playArp = () => undefined;
+
+  const random = Math.random;
+  Math.random = () => 0.95;
+  try {
+    audio.scheduleNote(2, 0);
+  } finally {
+    Math.random = random;
+  }
+
+  assert.equal(kick, 0);
+  assert.equal(bass, 1);
+  assert.equal(hat, 1);
+  assert.equal(acid, 1);
+});
+
+test('scheduleNote section 3 triggers snare only on final bar and quarter beat', () => {
+  const audio = new AudioEngine();
+  const { ctx } = createMockAudioContext();
+  audio.ctx = ctx as unknown as AudioContext;
+  audio.masterGain = { gain: createParam(0.5), connect: () => undefined } as unknown as GainNode;
+
+  let snare = 0;
+  let arp = 0;
+  audio.playSnare = () => { snare += 1; };
+  audio.playArp = () => { arp += 1; };
+  audio.playAcid = () => undefined;
+  audio.playKick = () => undefined;
+  audio.playBass = () => undefined;
+  audio.playHat = () => undefined;
+
+  audio.total16thNotes = 16 * 31; // section=3, barOfSection=7
+  const random = Math.random;
+  Math.random = () => 0;
+  try {
+    audio.scheduleNote(4, 0);
+  } finally {
+    Math.random = random;
+  }
+
+  assert.equal(arp, 1);
+  assert.equal(snare, 1);
+});

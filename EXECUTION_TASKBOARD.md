@@ -15,6 +15,7 @@ Owner: CODEX
 | AC-006 | Final closure summary table | AC-001..AC-005 | CODEX | DONE | Completed items + blockers + open questions delivered |
 | AC-007 | Fix audio arrangement progression defect + add regression tests | AC-001 | CODEX | DONE | `AudioEngine` uses absolute 16th-note counter and new tests pass |
 | AC-008 | Normalize completion artifacts with latest verification metrics | AC-001, AC-002 | CODEX | DONE | All docs now reflect 70/70 tests + 84.89% coverage snapshot |
+| AC-009 | Expand AudioEngine edge-case coverage and rerun full verification | AC-001 | CODEX | DONE | Added 7 tests; suite 77/77 and coverage 85.85% lines |
 
 ## Logbook Protocol
 
@@ -27,6 +28,7 @@ Owner: CODEX
 | 2026-03-06T04:19 | AC-005 | Updated Universal Workflow Pinboard | None | File diff + commit |
 | 2026-03-06T04:25 | AC-007 | Fixed audio bar progression + added edge-case tests | None | `npm test`, `npm run test:coverage` outputs |
 | 2026-03-06T04:32 | AC-008 | Synced workflow/taskboard metrics to latest run | None | `npm test` 70/70 + coverage 84.89% outputs |
+| 2026-03-06T04:38 | AC-009 | Added scheduler/section audio edge-case regressions | None | `npm test` 77/77 + coverage 85.85% outputs |
 
 ## External Blockers
 
