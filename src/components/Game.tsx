@@ -1,5 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { audio } from '../utils/audio';
+import { analytics } from '../utils/analytics';
+import SoundSettings from './SoundSettings';
+import Menu from './Menu';
 
 const INSECT_DEFS = [
   { type: 'weed_ant', emojis: ['🌿', '🐜'] },
@@ -37,6 +40,7 @@ interface PsyEffect {
 export default function Game() {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
   const lastInputTime = useRef<number>(0);
   const offscreenCanvas = useRef<HTMLCanvasElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -62,7 +66,7 @@ export default function Game() {
     feverFramesLeft: 0,
   });
 
-  const requestRef = useRef<number>();
+  const requestRef = useRef<number | undefined>(undefined);
   const updateRef = useRef<() => void>(() => {});
 
   useEffect(() => {
@@ -89,6 +93,7 @@ export default function Game() {
     setIsPlaying(true);
     setGameOver(false);
     setScore(0);
+    const startTime = Date.now();
     state.current = {
       insects: [],
       psyEffects: [],
@@ -105,14 +110,15 @@ export default function Game() {
       feverMode: false,
       feverFramesLeft: 0,
     };
-    // Spawn first insect immediately
     spawnInsect();
     
-    // Start loop if not already running
     if (requestRef.current) {
       cancelAnimationFrame(requestRef.current);
     }
     requestRef.current = requestAnimationFrame(() => updateRef.current());
+    
+    analytics.init();
+    analytics.trackGameStart(1);
   };
 
   const endGame = () => {
@@ -122,7 +128,10 @@ export default function Game() {
     setGameOver(true);
     state.current.isPlaying = false;
     state.current.gameOver = true;
-    setHighScore((prev) => Math.max(prev, state.current.score));
+    const finalScore = state.current.score;
+    const duration = state.current.frames / 60;
+    setHighScore((prev) => Math.max(prev, finalScore));
+    analytics.trackGameEnd(finalScore, 1, duration);
   };
 
   const handleInput = (clientX: number, clientY: number) => {
@@ -174,9 +183,10 @@ export default function Game() {
         type: 'kaleidoscope'
       });
 
-      // Valid tap
       targetInsect.scored = true;
       const isSpecial = targetInsect.def.type === 'ladybug';
+      
+      analytics.trackMatch(targetInsect.def.type, isSpecial ? 2 : 1);
       
       setScore((s) => {
         const prevScore = s;
@@ -243,7 +253,11 @@ export default function Game() {
       return;
     }
 
-    const ctx = canvas.getContext('2d');
+    // Cache context
+    if (!ctxRef.current) {
+      ctxRef.current = canvas.getContext('2d', { willReadFrequently: true });
+    }
+    const ctx = ctxRef.current;
     if (!ctx) {
       requestRef.current = requestAnimationFrame(update);
       return;
@@ -706,8 +720,13 @@ export default function Game() {
             <span className="text-fuchsia-400 animate-pulse text-xl font-bold">FEVER MODE!</span>
           )}
         </div>
-        <div className="text-white/50 font-mono text-xl drop-shadow-md">
-          Best: {highScore}
+        <div className="flex items-center gap-4">
+          <div className="text-white/50 font-mono text-xl drop-shadow-md">
+            Best: {highScore}
+          </div>
+          <div className="pointer-events-auto">
+            <SoundSettings />
+          </div>
         </div>
       </div>
 
@@ -719,32 +738,43 @@ export default function Game() {
         onTouchStart={handleTouchStart}
       />
 
-      {/* Start / Game Over Overlay */}
-      {(!isPlaying || gameOver) && (
+      {/* Menu - show when not playing */}
+      {!isPlaying && !gameOver && (
+        <Menu onStartGame={startGame} highScore={highScore} />
+      )}
+
+      {/* Game Over Overlay */}
+      {gameOver && (
         <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm">
-          <h1 className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-500 via-cyan-500 to-yellow-500 mb-2 text-center drop-shadow-lg transform -skew-x-6">
-            INSECT<br/>TILES
+          <h1 className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-red-500 via-fuchsia-500 to-red-500 mb-4 text-center drop-shadow-lg animate-pulse">
+            GAME OVER
           </h1>
           
-          {gameOver && (
-            <div className="mb-8 text-center animate-bounce">
-              <p className="text-red-500 font-mono text-xl mb-2">GAME OVER</p>
-              <p className="text-white font-mono text-3xl">Score: {score}</p>
+          <div className="mb-8 text-center">
+            <p className="text-white font-mono text-4xl mb-2">{score}</p>
+            <p className="text-white/50 font-mono text-sm">POINTS</p>
+          </div>
+
+          {score >= highScore && score > 0 && (
+            <div className="mb-6 px-6 py-2 bg-yellow-500/20 rounded-full border border-yellow-500/30">
+              <span className="text-yellow-400 font-bold">NEW HIGH SCORE!</span>
             </div>
           )}
 
-          {!gameOver && (
-            <p className="text-white/70 mb-8 max-w-xs text-center text-sm">
-              Tap the lowest insect before it reaches the bottom. Don't tap empty lanes!
-            </p>
-          )}
-
-          <button
-            onClick={startGame}
-            className="px-8 py-4 bg-white text-black font-bold text-xl rounded-full hover:scale-105 active:scale-95 transition-transform shadow-[0_0_20px_rgba(255,255,255,0.5)]"
-          >
-            {gameOver ? 'PLAY AGAIN' : 'START GAME'}
-          </button>
+          <div className="flex gap-4">
+            <button
+              onClick={startGame}
+              className="px-8 py-4 bg-white text-black font-bold text-xl rounded-full hover:scale-105 active:scale-95 transition-transform shadow-[0_0_20px_rgba(255,255,255,0.5)]"
+            >
+              PLAY AGAIN
+            </button>
+            <button
+              onClick={() => { setGameOver(false); setIsPlaying(false); }}
+              className="px-6 py-4 bg-white/10 text-white font-bold rounded-full hover:bg-white/20 border border-white/20"
+            >
+              MENU
+            </button>
+          </div>
         </div>
       )}
     </div>
