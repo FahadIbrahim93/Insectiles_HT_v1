@@ -10,6 +10,8 @@ interface GameHudProps {
   slowMoActive: boolean;
   soundEnabled: boolean;
   onToggleSound: () => void;
+  isPaused: boolean;
+  onTogglePause: () => void;
   perfSnapshot: PerfSnapshot | null;
   showPerfHud: boolean;
 }
@@ -24,6 +26,8 @@ export default function GameHud({
   slowMoActive,
   soundEnabled,
   onToggleSound,
+  isPaused,
+  onTogglePause,
   perfSnapshot,
   showPerfHud,
 }: GameHudProps) {
@@ -49,6 +53,13 @@ export default function GameHud({
             className="pointer-events-auto rounded-full bg-white/10 px-3 py-1 text-xs font-mono text-white hover:bg-white/20"
           >
             {soundEnabled ? '🔊 Sound On' : '🔇 Sound Off'}
+          </button>
+          <button
+            type="button"
+            onClick={onTogglePause}
+            className="pointer-events-auto rounded-full bg-white/10 px-3 py-1 text-xs font-mono text-white hover:bg-white/20"
+          >
+            {isPaused ? '▶ Resume' : '⏸ Pause'}
           </button>
           {showPerfHud && perfSnapshot && (
             <div className="rounded-md border border-cyan-300/40 bg-black/40 px-2 py-1 text-[11px] font-mono text-cyan-100">

@@ -31,6 +31,23 @@ const ok = await check();
 if (ok) process.exit(0);
 
 console.error('[e2e-preflight] Playwright browser binary not found.');
+const shouldAutoInstall = ['1', 'true', 'yes', 'on'].includes(
+  String(process.env.PINIK_E2E_AUTO_INSTALL ?? '').toLowerCase()
+);
+if (shouldAutoInstall) {
+  console.error('[e2e-preflight] Attempting automatic install: npx playwright install chromium');
+  try {
+    execSync('npx playwright install chromium', { stdio: 'inherit' });
+    const installed = await check();
+    if (installed) {
+      console.log('[e2e-preflight] Browser installation succeeded.');
+      process.exit(0);
+    }
+  } catch (error) {
+    console.error('[e2e-preflight] Automatic install failed.', error);
+  }
+}
+
 console.error('[e2e-preflight] Try: npm run e2e:install');
 try {
   execSync('npx playwright --version', { stdio: 'inherit' });

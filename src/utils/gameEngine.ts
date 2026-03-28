@@ -1,6 +1,7 @@
 import { calculateGameSpeed, calculateSpawnInterval, shouldActivateFeverMode } from '../utils/gameRules';
 import { advancePsyEffects, moveInsects, updateScreenShake } from '../utils/loop';
 import { findTopTargetInLane } from '../utils/gameplay';
+import { nextInt, normalizeRandom, type RandomFn } from './rng';
 
 export interface Insect {
   id: number;
@@ -65,12 +66,14 @@ export interface GameEngineConfig {
   speedIncrement: number;
   maxSpeed: number;
   feverThreshold: number;
+  random?: RandomFn;
 }
 
 export interface EngineCallbacks {
   getScore: () => number;
   getIsFeverMode: () => boolean;
   getIsPlaying: () => boolean;
+  getIsPaused: () => boolean;
   getGameOver: () => boolean;
   getIsSlowMo: () => boolean;
   getSoundEnabled: () => boolean;
@@ -136,6 +139,7 @@ export class GameEngine {
 
   private requestRef: number | undefined;
   private isRunning = false;
+  private random: RandomFn;
 
   constructor(canvas: HTMLCanvasElement, images: HTMLImageElement[], config: GameEngineConfig, callbacks: EngineCallbacks) {
     this.canvas = canvas;
@@ -143,7 +147,8 @@ export class GameEngine {
     this.config = config;
     this.callbacks = callbacks;
     this.speed = config.initialSpeed;
-    this.bgIndex = Math.floor(Math.random() * 4) + 4;
+    this.random = config.random ?? Math.random;
+    this.bgIndex = nextInt(this.random, 4) + 4;
   }
 
   start(): void {
@@ -174,19 +179,25 @@ export class GameEngine {
     this.lastPowerUpFrame = 0;
     this.hue = 0;
     this.entityIdCounter = 0;
-    this.bgIndex = Math.floor(Math.random() * 4) + 4;
+    this.bgIndex = nextInt(this.random, 4) + 4;
     this.shake = 0;
   }
 
   private loop(timestamp: number = performance.now()): void {
     if (!this.isRunning) return;
 
-    const { getIsPlaying, getGameOver, getScore, getIsFeverMode } = this.callbacks;
+    const { getIsPlaying, getIsPaused, getGameOver, getScore, getIsFeverMode } = this.callbacks;
     const isPlaying = getIsPlaying();
     const gameOver = getGameOver();
 
     if (gameOver || !isPlaying) {
       this.stop();
+      return;
+    }
+
+    if (getIsPaused()) {
+      this.draw();
+      this.requestRef = requestAnimationFrame((nextTimestamp) => this.loop(nextTimestamp));
       return;
     }
 
@@ -254,19 +265,19 @@ export class GameEngine {
 
   private spawnInsect(): void {
     const isFeverMode = this.callbacks.getIsFeverMode();
-    const lane = Math.floor(Math.random() * this.config.laneCount);
+    const lane = nextInt(this.random, this.config.laneCount);
     let spriteIndex: number;
     let cachedImage: HTMLImageElement | undefined;
 
     if (isFeverMode) {
       // Use BUG_1-4 (indices 12-15) for fever mode
-      const feverOffset = Math.floor(Math.random() * GameEngine.SPRITE_COUNT);
+      const feverOffset = nextInt(this.random, GameEngine.SPRITE_COUNT);
       spriteIndex = GameEngine.SPRITE_FEVER_START + feverOffset;
       cachedImage = this.images[spriteIndex];
     } else {
       // Use generated 8x4 sprite sheet for walk cycle in normal mode
       cachedImage = this.images.find((img) => img.src.includes(GameEngine.WALK_SPRITE_PATH));
-      const fallbackOffset = Math.floor(Math.random() * GameEngine.SPRITE_COUNT);
+      const fallbackOffset = nextInt(this.random, GameEngine.SPRITE_COUNT);
       spriteIndex = cachedImage ? -1 : GameEngine.SPRITE_FALLING_START + fallbackOffset;
       if (!cachedImage) cachedImage = this.images[spriteIndex];
     }
@@ -292,8 +303,8 @@ export class GameEngine {
   }
 
   private spawnPowerUp(): void {
-    const lane = Math.floor(Math.random() * this.config.laneCount);
-    const type: PowerUp['type'] = Math.random() > 0.5 ? 'shield' : 'slowmo';
+    const lane = nextInt(this.random, this.config.laneCount);
+    const type: PowerUp['type'] = normalizeRandom(this.random()) > 0.5 ? 'shield' : 'slowmo';
     this.powerUps.push({ id: this.entityIdCounter++, lane, y: -this.config.tileHeight * 0.5, type });
   }
 
@@ -558,6 +569,18 @@ export class GameEngine {
       return;
     }
 
+    const strikeZoneCenter = this.canvas.height - this.config.tileHeight / 2;
+    const insectCenterY = topInsect.y + this.config.tileHeight / 2;
+    const distanceToStrike = Math.abs(insectCenterY - strikeZoneCenter);
+    const maxHitDistance = this.config.tileHeight * 0.9;
+    if (distanceToStrike > maxHitDistance) {
+      this.callbacks.recordMiss();
+      this.callbacks.triggerHaptic(10);
+      return;
+    }
+
+    const rating = this.getHitRating(distanceToStrike);
+
     // AAA-004: Trigger hit animation instead of instant removal
     const hitInsect = this.insects.find((ins) => ins.id === topInsect.id);
     if (hitInsect) {
@@ -567,7 +590,8 @@ export class GameEngine {
     }
 
     const comboMultiplier = this.callbacks.recordHit();
-    const baseScore = this.callbacks.getIsFeverMode() ? 200 : 100;
+    const baseScoreByRating = { perfect: 120, great: 100, good: 70 } as const;
+    const baseScore = this.callbacks.getIsFeverMode() ? baseScoreByRating[rating] * 2 : baseScoreByRating[rating];
     const totalScore = baseScore * comboMultiplier;
     this.callbacks.addScore(totalScore);
     this.shake = this.callbacks.getIsFeverMode() ? 15 : 5;
@@ -576,7 +600,7 @@ export class GameEngine {
     const hitY = topInsect.y + this.config.tileHeight / 2;
     this.createPsyEffect(hitX, hitY);
     this.createExplosion(lane, topInsect.y, this.callbacks.getIsFeverMode() ? 'rgba(255,70,200,ALPHA)' : 'rgba(255,220,80,ALPHA)');
-    this.createScorePopup(hitX, hitY, totalScore, comboMultiplier);
+    this.createScorePopup(hitX, hitY, totalScore, comboMultiplier, rating);
 
     if (this.callbacks.getSoundEnabled()) {
       this.callbacks.playTapSound(lane, this.callbacks.getIsFeverMode());
@@ -608,7 +632,7 @@ export class GameEngine {
       y,
       life: 0,
       maxLife: 30,
-      hue: Math.random() * 360,
+      hue: normalizeRandom(this.random()) * 360,
     });
   }
 
@@ -620,16 +644,16 @@ export class GameEngine {
 
     // AAA-005: Enhanced explosion with more particles and lane colors
     for (let i = 0; i < 16; i++) {
-      const angle = (Math.PI * 2 * i) / 16 + Math.random() * 0.3;
-      const speed = 1.5 + Math.random() * 3;
-      const useLaneColor = Math.random() > 0.3;
+      const angle = (Math.PI * 2 * i) / 16 + normalizeRandom(this.random()) * 0.3;
+      const speed = 1.5 + normalizeRandom(this.random()) * 3;
+      const useLaneColor = normalizeRandom(this.random()) > 0.3;
       this.emitParticle({
         x: centerX,
         y: centerY,
         vx: Math.cos(angle) * speed,
         vy: Math.sin(angle) * speed,
         life: 0,
-        maxLife: 20 + Math.random() * 10,
+        maxLife: 20 + normalizeRandom(this.random()) * 10,
         color: useLaneColor ? laneColor : color,
       });
     }
@@ -642,18 +666,32 @@ export class GameEngine {
     const laneColor = GameEngine.LANE_COLORS[insect.lane % GameEngine.LANE_COLORS.length];
 
     this.emitParticle({
-      x: centerX + (Math.random() - 0.5) * 20,
+      x: centerX + (normalizeRandom(this.random()) - 0.5) * 20,
       y: insect.y + this.config.tileHeight * 0.8,
-      vx: (Math.random() - 0.5) * 0.5,
-      vy: 0.3 + Math.random() * 0.5,
+      vx: (normalizeRandom(this.random()) - 0.5) * 0.5,
+      vy: 0.3 + normalizeRandom(this.random()) * 0.5,
       life: 0,
       maxLife: 12,
       color: laneColor,
     });
   }
 
+  private getHitRating(distanceToStrike: number): 'perfect' | 'great' | 'good' {
+    const perfectThreshold = this.config.tileHeight * 0.25;
+    const greatThreshold = this.config.tileHeight * 0.55;
+    if (distanceToStrike <= perfectThreshold) return 'perfect';
+    if (distanceToStrike <= greatThreshold) return 'great';
+    return 'good';
+  }
+
   // AAA-007: Create floating score popup
-  private createScorePopup(x: number, y: number, points: number, combo: number): void {
+  private createScorePopup(
+    x: number,
+    y: number,
+    points: number,
+    combo: number,
+    rating: 'perfect' | 'great' | 'good'
+  ): void {
     let color = '#fff';
     let text = `+${points}`;
 
@@ -664,6 +702,12 @@ export class GameEngine {
     if (this.callbacks.getIsFeverMode()) {
       color = '#ff46c8'; // Fever pink
       text = `${points} FEVER!`;
+    } else if (rating === 'perfect') {
+      color = '#67e8f9';
+      text = `PERFECT +${points}`;
+    } else if (rating === 'great') {
+      color = '#c084fc';
+      text = `GREAT +${points}`;
     }
 
     this.scorePopups.push({

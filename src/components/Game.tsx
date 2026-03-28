@@ -9,6 +9,7 @@ import { logger } from '../utils/logger';
 import { PerfSampler, type PerfSnapshot } from '../utils/perfSampler';
 import { safeStorage } from '../utils/safeStorage';
 import { isEnabledFlag } from '../utils/flags';
+import { createSeededRng } from '../utils/rng';
 import GameHud from './GameHud';
 import GameOverlay from './GameOverlay';
 
@@ -21,6 +22,7 @@ export default function Game() {
     highScore,
     gameOver,
     isPlaying,
+    isPaused,
     isFeverMode,
     feverProgress,
     comboMultiplier,
@@ -28,6 +30,8 @@ export default function Game() {
     soundEnabled,
     leaderboard,
     startGame: startStoreGame,
+    pauseGame,
+    resumeGame,
     addScore,
     setFeverMode,
     setGameOver,
@@ -54,6 +58,15 @@ export default function Game() {
     const query = new URLSearchParams(window.location.search).get('debugPerf');
     const localValue = safeStorage.getItem('pinik_debug_perf');
     return isEnabledFlag(query) || isEnabledFlag(localValue);
+  }, []);
+
+  const seededRandom = useMemo(() => {
+    if (typeof window === 'undefined') return undefined;
+    const seedParam = new URLSearchParams(window.location.search).get('seed');
+    if (seedParam === null) return undefined;
+    const seedValue = Number(seedParam);
+    if (!Number.isFinite(seedValue)) return undefined;
+    return createSeededRng(seedValue);
   }, []);
 
   useEffect(() => {
@@ -130,11 +143,13 @@ export default function Game() {
         speedIncrement: GAME_SETTINGS.SPEED_INCREMENT,
         maxSpeed: GAME_SETTINGS.MAX_SPEED,
         feverThreshold: GAME_SETTINGS.FEVER_THRESHOLD,
+        random: seededRandom,
       },
       {
         getScore: () => useGameStore.getState().score,
         getIsFeverMode: () => useGameStore.getState().isFeverMode,
         getIsPlaying: () => useGameStore.getState().isPlaying,
+        getIsPaused: () => useGameStore.getState().isPaused,
         getGameOver: () => useGameStore.getState().gameOver,
         getIsSlowMo: () => useGameStore.getState().isSlowMoActive(),
         getSoundEnabled: () => useGameStore.getState().soundEnabled,
@@ -168,8 +183,8 @@ export default function Game() {
   };
 
   const handleInteraction = (clientX: number) => {
-    const { isPlaying: playing, gameOver: over } = useGameStore.getState();
-    if (!playing || over) return;
+    const { isPlaying: playing, gameOver: over, isPaused: paused } = useGameStore.getState();
+    if (!playing || over || paused) return;
 
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -182,6 +197,7 @@ export default function Game() {
   };
 
   const handleTouchMove = (clientX: number) => {
+    if (useGameStore.getState().isPaused) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
@@ -213,14 +229,24 @@ export default function Game() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code === 'Space' || e.code === 'Escape') {
+        e.preventDefault();
+        const { isPlaying: playing, gameOver: over, isPaused: paused } = useGameStore.getState();
+        if (!playing || over) return;
+        if (paused) resumeGame();
+        else pauseGame();
+        return;
+      }
+
       const keyLaneMap: Record<string, number> = { '1': 0, '2': 1, '3': 2, '4': 3 };
       const lane = keyLaneMap[e.key];
       if (lane === undefined) return;
+      if (useGameStore.getState().isPaused) return;
       engineRef.current?.handleTap(lane);
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [pauseGame, resumeGame]);
 
   useEffect(() => {
     if (!showPerfHud) {
@@ -263,6 +289,8 @@ export default function Game() {
         slowMoActive={isSlowMoActive()}
         soundEnabled={soundEnabled}
         onToggleSound={toggleSound}
+        isPaused={isPaused}
+        onTogglePause={() => (isPaused ? resumeGame() : pauseGame())}
         perfSnapshot={perfSnapshot}
         showPerfHud={showPerfHud}
       />
@@ -285,10 +313,12 @@ export default function Game() {
 
       <GameOverlay
         isPlaying={isPlaying}
+        isPaused={isPaused}
         gameOver={gameOver}
         score={score}
         leaderboard={leaderboard}
         startGame={startGame}
+        resumeGame={resumeGame}
       />
     </div>
   );
