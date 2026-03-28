@@ -20,6 +20,7 @@ interface GameState {
   highScore: number;
   gameOver: boolean;
   isPlaying: boolean;
+  isPaused: boolean;
   isFeverMode: boolean;
   feverProgress: number;
   comboMultiplier: number;
@@ -32,6 +33,8 @@ interface GameState {
   addScore: (points: number) => void;
   setGameOver: (status: boolean) => void;
   startGame: () => void;
+  pauseGame: () => void;
+  resumeGame: () => void;
   resetGame: () => void;
   setFeverMode: (status: boolean) => void;
   recordHit: () => number;
@@ -100,6 +103,7 @@ let state: GameState = {
   highScore: persisted.highScore,
   gameOver: false,
   isPlaying: false,
+  isPaused: false,
   isFeverMode: false,
   feverProgress: 0,
   comboMultiplier: 1,
@@ -123,10 +127,11 @@ let state: GameState = {
     });
   },
 
-  setGameOver: (status) => useGameStore.setState({ gameOver: status, isPlaying: !status }),
+  setGameOver: (status) => useGameStore.setState({ gameOver: status, isPlaying: !status, isPaused: false }),
 
   startGame: () => useGameStore.setState({
     isPlaying: true,
+    isPaused: false,
     gameOver: false,
     score: 0,
     isFeverMode: false,
@@ -137,10 +142,19 @@ let state: GameState = {
     slowMoUntil: 0,
   }),
 
+  pauseGame: () => useGameStore.setState((current) => (
+    current.isPlaying && !current.gameOver ? { isPaused: true } : {}
+  )),
+
+  resumeGame: () => useGameStore.setState((current) => (
+    current.isPlaying && !current.gameOver ? { isPaused: false } : {}
+  )),
+
   resetGame: () => useGameStore.setState({
     score: 0,
     gameOver: false,
     isPlaying: false,
+    isPaused: false,
     isFeverMode: false,
     feverProgress: 0,
     comboMultiplier: 1,

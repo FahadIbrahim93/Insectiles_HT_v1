@@ -2,6 +2,7 @@ export interface LaneTarget {
   id: number;
   lane: number;
   y: number;
+  isHit?: boolean;
 }
 
 export const FEVER_HIT_SCORE = 20;
@@ -14,6 +15,7 @@ export const findTopTargetInLane = <T extends LaneTarget>(items: T[], lane: numb
   let top: T | undefined;
   for (const item of items) {
     if (item.lane !== lane) continue;
+    if (item.isHit) continue;
     if (!top || item.y > top.y) top = item;
   }
   return top;

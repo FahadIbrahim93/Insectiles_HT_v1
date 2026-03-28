@@ -17,6 +17,7 @@ const createCallbacks = (): EngineCallbacks => ({
   getScore: () => 0,
   getIsFeverMode: () => false,
   getIsPlaying: () => true,
+  getIsPaused: () => false,
   getGameOver: () => false,
   getIsSlowMo: () => false,
   getSoundEnabled: () => true,
@@ -214,14 +215,71 @@ test('handleTap scores hit and sets insect hit animation state', () => {
 
   const engine = createEngine(callbacks);
   (engine as any).insects = [
-    { id: 5, lane: 1, y: 300, spriteIndex: 0, speed: 4, frameIndex: 0, frameCount: 8, frameAdvanceCounter: 0, frameAdvanceRate: 5, useSpriteSheet: true, spriteRow: 0 },
+    { id: 5, lane: 1, y: 650, spriteIndex: 0, speed: 4, frameIndex: 0, frameCount: 8, frameAdvanceCounter: 0, frameAdvanceRate: 5, useSpriteSheet: true, spriteRow: 0 },
   ];
 
   engine.handleTap(1);
 
   assert.equal(hitCalls, 1);
-  assert.equal(recordedScore, 200);
+  assert.equal(recordedScore, 240);
   assert.equal((engine as any).insects[0].isHit, true);
   assert.equal((engine as any).insects[0].hitScale, 1.3);
   assert.equal((engine as any).scorePopups.length, 1);
+});
+
+test('handleTap records miss when insect is outside hit window', () => {
+  let missCalls = 0;
+  const callbacks = {
+    ...createCallbacks(),
+    recordMiss: () => {
+      missCalls += 1;
+    },
+  };
+
+  const engine = createEngine(callbacks);
+  (engine as any).insects = [
+    { id: 3, lane: 1, y: 100, spriteIndex: 0, speed: 4, frameIndex: 0, frameCount: 8, frameAdvanceCounter: 0, frameAdvanceRate: 5, useSpriteSheet: true, spriteRow: 0 },
+  ];
+
+  engine.handleTap(1);
+
+  assert.equal(missCalls, 1);
+});
+
+test('spawnInsect uses injected random source for deterministic lane and sprite selection', () => {
+  const randomValues = [0.1, 0.6, 0.25];
+  const engine = new GameEngine(
+    { width: 400, height: 800 } as HTMLCanvasElement,
+    [] as HTMLImageElement[],
+    {
+      ...mockConfig,
+      random: () => randomValues.shift() ?? 0,
+    },
+    createCallbacks()
+  );
+
+  (engine as any).spawnInsect();
+  const insect = (engine as any).insects[0];
+
+  assert.equal(insect.lane, 2);
+  assert.equal(insect.spriteIndex, 13);
+});
+
+test('spawnPowerUp uses injected random source for deterministic lane and type', () => {
+  const randomValues = [0.1, 0.9, 0.1];
+  const engine = new GameEngine(
+    { width: 400, height: 800 } as HTMLCanvasElement,
+    [] as HTMLImageElement[],
+    {
+      ...mockConfig,
+      random: () => randomValues.shift() ?? 0,
+    },
+    createCallbacks()
+  );
+
+  (engine as any).spawnPowerUp();
+  const powerUp = (engine as any).powerUps[0];
+
+  assert.equal(powerUp.lane, 3);
+  assert.equal(powerUp.type, 'slowmo');
 });

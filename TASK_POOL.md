@@ -134,6 +134,10 @@
 | OPS-009 | Remove self-referential fields from audit artifact to make freshness checks truly stable | CODEX | 2026-03-06 | Dropped volatile HEAD/date/hash rows from `BRANCH_AUDIT_LATEST.md` generation and updated tests to lock deterministic output shape |
 | OPS-010 | Remove `main/work` alignment volatility and add audit write/check roundtrip test | CODEX | 2026-03-06 | Eliminated alignment field from generated artifact, added `runAudit` temp-path regression test, and verified full suite at 84/84 |
 | OPS-011 | Make CI audit verification environment-resilient via structural validation mode | CODEX | 2026-03-06 | Added `--validate` mode and switched `audit:branches:verify` to generate+validate structure (no env-sensitive diff gate) |
+| OPS-012 | Conduct CTO-level uncompromising full-repo audit with executable evidence | CODEX | 2026-03-28 | Added `CTO_AUDIT_REPORT_2026-03-28.md` with 12-dimension scorecard, prioritized risks, and 10/10 roadmap based on lint/build/test/coverage/perf/security/e2e evidence |
+| OPS-013 | Execute autonomous completion sweep: deterministic RNG + E2E preflight hardening | CODEX | 2026-03-28 | Added injectable seeded RNG path in engine/UI, expanded deterministic tests, and upgraded e2e preflight with optional auto-install fallback |
+| OPS-014 | Upgrade gameplay loop with pause state + timing-based hit ratings | CODEX | 2026-03-28 | Added paused runtime state, HUD/overlay controls, strike-window hit validation (Perfect/Great/Good), score tuning, and regression tests |
+| OPS-015 | Hardening pass: retap-hit guard + safer E2E preflight defaults | CODEX | 2026-03-28 | Updated lane targeting to ignore already-hit insects, added regression test, and switched Playwright auto-install to explicit opt-in via `PINIK_E2E_AUTO_INSTALL=1` |
 
 ---
 

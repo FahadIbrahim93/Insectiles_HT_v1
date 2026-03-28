@@ -9,6 +9,7 @@ const resetStore = () => {
     highScore: 0,
     gameOver: false,
     isPlaying: false,
+    isPaused: false,
     isFeverMode: false,
     feverProgress: 0,
     comboMultiplier: 1,
@@ -161,6 +162,22 @@ test('setGameOver toggles isPlaying and gameOver flags', () => {
   assert.equal(state.isPlaying, true);
 });
 
+test('pause and resume toggle paused state only while playing', () => {
+  resetStore();
+  const store = useGameStore.getState();
+
+  store.pauseGame();
+  assert.equal(useGameStore.getState().isPaused, false);
+
+  store.startGame();
+  store.pauseGame();
+  assert.equal(useGameStore.getState().isPaused, true);
+  assert.equal(useGameStore.getState().isPlaying, true);
+
+  store.resumeGame();
+  assert.equal(useGameStore.getState().isPaused, false);
+});
+
 test('setFeverMode updates isFeverMode and respects combo', () => {
   resetStore();
   const store = useGameStore.getState();
@@ -189,4 +206,3 @@ test('state persists to localStorage', () => {
   assert.equal(persisted.soundEnabled, false);
   assert.ok(Array.isArray(persisted.leaderboard));
 });
-
