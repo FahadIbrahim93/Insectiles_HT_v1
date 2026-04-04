@@ -5,14 +5,16 @@ interface LeaderboardEntry {
 
 interface GameOverlayProps {
   isPlaying: boolean;
+  isPaused: boolean;
   gameOver: boolean;
   score: number;
   leaderboard: LeaderboardEntry[];
   startGame: () => void;
+  resumeGame: () => void;
 }
 
-export default function GameOverlay({ isPlaying, gameOver, score, leaderboard, startGame }: GameOverlayProps) {
-  if (isPlaying && !gameOver) return null;
+export default function GameOverlay({ isPlaying, isPaused, gameOver, score, leaderboard, startGame, resumeGame }: GameOverlayProps) {
+  if (isPlaying && !gameOver && !isPaused) return null;
 
   return (
     <div data-testid="game-overlay" className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/80 backdrop-blur-xl px-6">
@@ -21,6 +23,11 @@ export default function GameOverlay({ isPlaying, gameOver, score, leaderboard, s
         <br />
         PIPRA
       </h1>
+      {isPaused && !gameOver && (
+        <div data-testid="game-paused" className="mb-6 text-center">
+          <p className="text-cyan-300 font-mono text-xl mb-2 tracking-tighter">PAUSED</p>
+        </div>
+      )}
       {gameOver && (
         <div data-testid="game-over" className="mb-6 text-center">
           <p className="text-red-500 font-mono text-xl mb-2 tracking-tighter">TRIP ENDED (GAME OVER)</p>
@@ -30,11 +37,11 @@ export default function GameOverlay({ isPlaying, gameOver, score, leaderboard, s
       <button
         type="button"
         data-testid="start-button"
-        onClick={startGame}
-        aria-label={gameOver ? "Restart game" : "Start game"} role="button"
+        onClick={isPaused ? resumeGame : startGame}
+        aria-label={isPaused ? 'Resume game' : gameOver ? 'Restart game' : 'Start game'}
         className="px-12 py-5 bg-white text-black font-black text-2xl rounded-full transition-shadow shadow-[0_0_30px_rgba(255,255,255,0.4)] hover:shadow-[0_0_50px_rgba(255,255,255,0.8)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-cyan-400"
       >
-        {gameOver ? 'RE-UP' : 'BEGIN TRIP'}
+        {isPaused ? 'RESUME' : gameOver ? 'RE-UP' : 'BEGIN TRIP'}
       </button>
 
       {leaderboard.length > 0 && (

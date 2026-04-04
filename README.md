@@ -24,9 +24,12 @@ npm run dev
 ## 🎮 Gameplay
 
 - Tap the lowest insect before it reaches the bottom
+- Timing now matters: taps are scored as **Perfect / Great / Good** based on strike-zone accuracy
 - Don't tap empty lanes!
 - Score points to trigger **FEVER MODE**
 - Beat the high score!
+- Optional deterministic runs for debugging: append `?seed=42` to URL.
+- Pause/resume in-game with **Space**, **Esc**, or HUD pause button
 
 ---
 
@@ -107,6 +110,11 @@ GitHub Actions workflow added at `.github/workflows/ci.yml` to enforce:
 - `npm run build`
 
 on push/PR for `main` and `dev`.
+
+## 🧪 E2E Local Reliability
+
+- `npm run test:e2e` now executes `e2e:preflight` first.
+- Preflight checks for Chromium browser binaries and can attempt `npx playwright install chromium` when `PINIK_E2E_AUTO_INSTALL=1` is set.
 
 ---
 
