@@ -4,7 +4,7 @@ import { advancePsyEffects, moveInsects, updateScreenShake } from '../src/utils/
 
 test('updateScreenShake decays shake and applies fever pulse', () => {
   assert.equal(updateScreenShake(10, false, 1), 9);
-  assert.equal(updateScreenShake(0, true, 10), 10);
+  assert.equal(updateScreenShake(0, true, 10), 15);
   assert.equal(updateScreenShake(5, true, 11), 4.5);
 });
 
@@ -20,13 +20,13 @@ test('advancePsyEffects increments life and removes expired effects', () => {
 });
 
 test('moveInsects marks bottom hit in normal mode', () => {
-  const result = moveInsects([{ y: 95, speed: 10 }], 100, false, 150);
+  const result = moveInsects([{ y: 95, speed: 10 }], 100, false, 150, 1);
   assert.equal(result.reachedBottom, true);
   assert.equal(result.insects[0].y, 105);
 });
 
 test('moveInsects wraps insects in fever mode', () => {
-  const result = moveInsects([{ y: 95, speed: 10 }], 100, true, 150);
+  const result = moveInsects([{ y: 95, speed: 10 }], 100, true, 150, 1);
   assert.equal(result.reachedBottom, false);
   assert.equal(result.insects[0].y, -150);
 });

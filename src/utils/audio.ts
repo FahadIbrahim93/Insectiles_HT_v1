@@ -1,9 +1,10 @@
-class AudioEngine {
+export class AudioEngine {
   ctx: AudioContext | null = null;
   masterGain: GainNode | null = null;
   bpm = 128;
   isPlaying = false;
   current16thNote = 0;
+  total16thNotes = 0;
   nextNoteTime = 0.0;
   scheduleAheadTime = 0.1;
   lookahead = 25.0;
@@ -12,9 +13,14 @@ class AudioEngine {
   filterCutoff = 1000;
   filterSweepDir = 1;
   noiseBuffer: AudioBuffer | null = null;
-  notes = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25];
+  notes = [261.63, 293.66, 329.63, 392.0, 440.0, 523.25];
+  laneNotes = [523.25, 659.25, 783.99, 1046.5];
   noteIndex = 0;
   muted = false;
+
+  private getWindowRef(): (Window & typeof globalThis) | undefined {
+    return typeof window !== "undefined" ? window : undefined;
+  }
 
   setMuted(muted: boolean) {
     this.muted = muted;
@@ -25,7 +31,10 @@ class AudioEngine {
 
   init() {
     if (this.ctx) return;
-    this.ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const win = this.getWindowRef();
+    const AudioContextCtor = win?.AudioContext ?? (win as Window & { webkitAudioContext?: typeof AudioContext } | undefined)?.webkitAudioContext;
+    if (!AudioContextCtor) return;
+    this.ctx = new AudioContextCtor();
     this.masterGain = this.ctx.createGain();
     this.masterGain.connect(this.ctx.destination);
     this.masterGain.gain.value = 0.5;
@@ -39,11 +48,12 @@ class AudioEngine {
     const secondsPerBeat = 60.0 / this.bpm;
     this.nextNoteTime += 0.25 * secondsPerBeat;
     this.current16thNote = (this.current16thNote + 1) % 16;
+    this.total16thNotes += 1;
   }
 
   scheduleNote(beatNumber: number, time: number) {
     if (!this.ctx || !this.masterGain) return;
-    const bar = Math.floor(this.current16thNote / 16);
+    const bar = Math.floor(this.total16thNotes / 16);
     const barOfSection = bar % 8;
     const section = Math.floor(bar / 8) % 4;
     let playKick = false, playBass = false, playSnare = false, playClosedHat = false, playOpenHat = false, playAcid = false, playArp = false;
@@ -179,7 +189,8 @@ class AudioEngine {
       this.scheduleNote(this.current16thNote, this.nextNoteTime);
       this.nextNote();
     }
-    this.timerID = window.setTimeout(() => this.scheduler(), this.lookahead);
+    const win = this.getWindowRef();
+    this.timerID = (win?.setTimeout ?? globalThis.setTimeout)(() => this.scheduler(), this.lookahead) as unknown as number;
   }
 
   playBgm() {
@@ -191,15 +202,20 @@ class AudioEngine {
     this.startTime = this.ctx.currentTime;
     this.nextNoteTime = this.ctx.currentTime + 0.1;
     this.current16thNote = 0;
+    this.total16thNotes = 0;
     this.scheduler();
   }
 
   stopBgm() {
     this.isPlaying = false;
-    if (this.timerID !== null) { window.clearTimeout(this.timerID); this.timerID = null; }
+    if (this.timerID !== null) {
+      const win = this.getWindowRef();
+      (win?.clearTimeout ?? globalThis.clearTimeout)(this.timerID);
+      this.timerID = null;
+    }
   }
 
-  playTapSound(isFever = false) {
+  playTapSound(lane = 0, isFever = false) {
     if (this.muted) return;
     if (!this.ctx || !this.masterGain) return;
     const osc = this.ctx.createOscillator();
@@ -209,9 +225,10 @@ class AudioEngine {
       osc.frequency.exponentialRampToValueAtTime(1760, this.ctx.currentTime + 0.1);
       gain.gain.setValueAtTime(0.8, this.ctx.currentTime);
     } else {
-      const freq = this.notes[this.noteIndex % this.notes.length] ?? 261.63;
-      this.noteIndex++; osc.type = 'triangle';
-      osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+      const laneFreq = this.laneNotes[Math.max(0, Math.min(this.laneNotes.length - 1, lane))] ?? this.notes[this.noteIndex % this.notes.length] ?? 261.63;
+      this.noteIndex++;
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(laneFreq, this.ctx.currentTime);
       gain.gain.setValueAtTime(0.5, this.ctx.currentTime);
     }
     gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.2);

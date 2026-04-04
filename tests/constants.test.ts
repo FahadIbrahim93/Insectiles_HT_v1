@@ -8,9 +8,7 @@ test('game settings include fever threshold and lane count', () => {
   assert.ok(GAME_SETTINGS.MAX_SPEED > GAME_SETTINGS.INITIAL_SPEED);
 });
 
-test('asset path registry includes required image groups and animation assets', () => {
-  const imageKeys = Object.keys(ASSET_PATHS.IMAGES);
-  assert.ok(imageKeys.length >= 12);
-  assert.ok(imageKeys.some((key) => key.startsWith('BUG_')));
+test('asset path registry includes expected total assets', () => {
+  assert.equal(Object.keys(ASSET_PATHS.IMAGES).length, 18);
   assert.equal(Object.keys(ASSET_PATHS.ANIMATIONS).length, 2);
 });

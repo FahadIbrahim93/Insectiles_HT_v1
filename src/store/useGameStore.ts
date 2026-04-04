@@ -1,4 +1,8 @@
 import { useSyncExternalStore } from 'react';
+import { GAME_SETTINGS } from '../constants';
+import { safeStorage } from '../utils/safeStorage';
+
+const FEVER_THRESHOLD = GAME_SETTINGS.FEVER_THRESHOLD;
 
 interface LeaderboardEntry {
   score: number;
@@ -16,6 +20,7 @@ interface GameState {
   highScore: number;
   gameOver: boolean;
   isPlaying: boolean;
+  isPaused: boolean;
   isFeverMode: boolean;
   feverProgress: number;
   comboMultiplier: number;
@@ -28,6 +33,8 @@ interface GameState {
   addScore: (points: number) => void;
   setGameOver: (status: boolean) => void;
   startGame: () => void;
+  pauseGame: () => void;
+  resumeGame: () => void;
   resetGame: () => void;
   setFeverMode: (status: boolean) => void;
   recordHit: () => number;
@@ -49,11 +56,10 @@ type StoreHook = (() => GameState) & {
 };
 
 const PERSIST_KEY = 'pinik_pipra_state';
-const FEVER_THRESHOLD = 500;
 const MAX_LEADERBOARD = 5;
 
 const readPersistedState = (): PersistedState => {
-  const raw = localStorage.getItem(PERSIST_KEY);
+  const raw = safeStorage.getItem(PERSIST_KEY);
   if (!raw) return { highScore: 0, leaderboard: [], soundEnabled: true };
 
   try {
@@ -81,7 +87,12 @@ const persistState = (next: GameState) => {
     leaderboard: next.leaderboard.slice(0, MAX_LEADERBOARD),
     soundEnabled: next.soundEnabled,
   };
-  localStorage.setItem(PERSIST_KEY, JSON.stringify(payload));
+
+  try {
+    safeStorage.setItem(PERSIST_KEY, JSON.stringify(payload));
+  } catch {
+    // safeStorage is designed to avoid throw paths, keep this as defensive no-op.
+  }
 };
 
 const persisted = readPersistedState();
@@ -92,6 +103,7 @@ let state: GameState = {
   highScore: persisted.highScore,
   gameOver: false,
   isPlaying: false,
+  isPaused: false,
   isFeverMode: false,
   feverProgress: 0,
   comboMultiplier: 1,
@@ -103,7 +115,9 @@ let state: GameState = {
 
   addScore: (points) => {
     useGameStore.setState((current) => {
-      const newScore = current.score + points;
+      const multiplier = current.comboMultiplier;
+      const adjustedPoints = Math.floor(points * multiplier);
+      const newScore = current.score + adjustedPoints;
       const newHighScore = Math.max(newScore, current.highScore);
       return {
         score: newScore,
@@ -113,10 +127,11 @@ let state: GameState = {
     });
   },
 
-  setGameOver: (status) => useGameStore.setState({ gameOver: status, isPlaying: !status }),
+  setGameOver: (status) => useGameStore.setState({ gameOver: status, isPlaying: !status, isPaused: false }),
 
   startGame: () => useGameStore.setState({
     isPlaying: true,
+    isPaused: false,
     gameOver: false,
     score: 0,
     isFeverMode: false,
@@ -127,10 +142,19 @@ let state: GameState = {
     slowMoUntil: 0,
   }),
 
+  pauseGame: () => useGameStore.setState((current) => (
+    current.isPlaying && !current.gameOver ? { isPaused: true } : {}
+  )),
+
+  resumeGame: () => useGameStore.setState((current) => (
+    current.isPlaying && !current.gameOver ? { isPaused: false } : {}
+  )),
+
   resetGame: () => useGameStore.setState({
     score: 0,
     gameOver: false,
     isPlaying: false,
+    isPaused: false,
     isFeverMode: false,
     feverProgress: 0,
     comboMultiplier: 1,
@@ -210,4 +234,4 @@ export const useGameStore = Object.assign(
   { getState, setState, subscribe }
 ) as StoreHook;
 
-export { FEVER_THRESHOLD, PERSIST_KEY, readPersistedState };
+export { PERSIST_KEY, readPersistedState, FEVER_THRESHOLD };

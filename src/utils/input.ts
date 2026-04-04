@@ -14,3 +14,21 @@ export const getLaneFromClientX = (
   if (laneIndex < 0 || laneIndex >= laneCount) return -1;
   return laneIndex;
 };
+
+export const triggerHaptic = (pattern: number | number[]) => {
+  if (typeof navigator !== 'undefined' && navigator.vibrate) {
+    navigator.vibrate(pattern);
+  }
+};
+
+export const getLanesFromSwipe = (startLane: number, endLane: number): number[] => {
+  if (startLane < 0 || endLane < 0) return [];
+  if (startLane === endLane) return [startLane];
+
+  const direction = startLane < endLane ? 1 : -1;
+  const lanes: number[] = [];
+  for (let lane = startLane; lane !== endLane + direction; lane += direction) {
+    lanes.push(lane);
+  }
+  return lanes;
+};

@@ -25,3 +25,14 @@ test('findTopTargetInLane returns undefined for empty lane', () => {
   const target = findTopTargetInLane(insects, 2);
   assert.equal(target, undefined);
 });
+
+test('findTopTargetInLane ignores insects already marked as hit', () => {
+  const insects = [
+    { id: 1, lane: 0, y: 120, isHit: true },
+    { id: 2, lane: 0, y: 100 },
+  ];
+
+  const target = findTopTargetInLane(insects, 0);
+  assert.ok(target);
+  assert.equal(target.id, 2);
+});
