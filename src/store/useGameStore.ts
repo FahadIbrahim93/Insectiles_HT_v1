@@ -114,6 +114,7 @@ let state: GameState = {
   leaderboard: persisted.leaderboard,
 
   addScore: (points) => {
+    if (!Number.isFinite(points) || points <= 0) return;
     useGameStore.setState((current) => {
       const multiplier = current.comboMultiplier;
       const adjustedPoints = Math.floor(points * multiplier);
