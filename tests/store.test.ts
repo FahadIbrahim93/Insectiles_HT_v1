@@ -206,3 +206,23 @@ test('state persists to localStorage', () => {
   assert.equal(persisted.soundEnabled, false);
   assert.ok(Array.isArray(persisted.leaderboard));
 });
+
+test('addScore ignores non-finite and non-positive values', () => {
+  resetStore();
+  const store = useGameStore.getState();
+  store.startGame();
+  store.addScore(10);
+  store.addScore(-4);
+  store.addScore(0);
+  store.addScore(Number.NaN);
+
+  const state = useGameStore.getState();
+  assert.equal(state.score, 10);
+  assert.equal(state.highScore, 10);
+});
+
+test('addScore floors fractional points to integer increments', () => {
+  resetStore();
+  useGameStore.getState().addScore(12.9);
+  assert.equal(useGameStore.getState().score, 12);
+});
