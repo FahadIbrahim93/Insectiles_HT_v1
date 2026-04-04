@@ -14,3 +14,9 @@ export const getLaneFromClientX = (
   if (laneIndex < 0 || laneIndex >= laneCount) return -1;
   return laneIndex;
 };
+
+export const triggerHaptic = (pattern: number | number[]) => {
+  if (typeof navigator !== 'undefined' && navigator.vibrate) {
+    navigator.vibrate(pattern);
+  }
+};

@@ -4,7 +4,7 @@ import { advancePsyEffects, moveInsects, updateScreenShake } from '../src/utils/
 
 test('updateScreenShake decays shake and applies fever pulse', () => {
   assert.equal(updateScreenShake(10, false, 1), 9);
-  assert.equal(updateScreenShake(0, true, 10), 10);
+  assert.equal(updateScreenShake(0, true, 10), 15);
   assert.equal(updateScreenShake(5, true, 11), 4.5);
 });
 

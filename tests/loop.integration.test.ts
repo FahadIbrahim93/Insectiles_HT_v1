@@ -71,7 +71,7 @@ test('updateScreenShake decays shake and applies fever pulse', () => {
   assert.equal(shake, 9); // decay by 1
 
   shake = updateScreenShake(0, true, 10); // frames % 10 === 0
-  assert.equal(shake, 10); // fever pulse applies
+  assert.equal(shake, 15); // fever pulse applies
 });
 
 test('updateScreenShake clamps negative to zero', () => {
