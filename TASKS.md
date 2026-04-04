@@ -3,26 +3,26 @@
 ## To Work On
 
 ### Phase 1: Foundation
-- [ ] Set up project structure
-- [ ] Integrate game sprites (from assets/)
-- [ ] Set up audio system with Web Audio API
+- [x] Set up project structure
+- [x] Integrate game sprites (from assets/)
+- [x] Set up audio system with Web Audio API
 
 ### Phase 2: Core Gameplay
-- [ ] Implement falling insects mechanic
-- [ ] Add tap/click interaction
-- [ ] Create score system
-- [ ] Add fever mode (500 points)
+- [x] Implement falling insects mechanic
+- [x] Add tap/click interaction
+- [x] Create score system
+- [x] Add fever mode (500 points)
 
 ### Phase 3: Polish
-- [ ] Add animations
-- [ ] Mobile responsiveness
-- [ ] Sound effects
-- [ ] High score persistence
+- [x] Add animations
+- [x] Mobile responsiveness
+- [x] Sound effects
+- [x] High score persistence
 
 ### Phase 4: Release
-- [ ] Deploy to Vercel
-- [ ] Test on mobile
-- [ ] Launch!
+- [ ] Deploy to Vercel (external blocker: authenticated environment required)
+- [ ] Test on mobile devices (external blocker: physical hardware required)
+- [ ] Launch! (depends on the two external blockers above)
 
 ---
 
@@ -34,6 +34,14 @@
 5. Link issue in PR
 
 ## Current Status
+- Mobile emulation smoke test evidence: `MOBILE_TEST_REPORT.md`
 - Repo: https://github.com/FahadIbrahim93/Insectiles_HT_v1
 - Assets: 14 files (sprites + animations)
-- Game Engine: Basic canvas rendering working
+- Game Engine: Canvas rendering + fever mode active
+- Quality Gates: `npm run lint`, `npm run test`, `npm run build`
+- Release Prep: `vercel.json` configured for SPA rewrites
+
+
+## Release Readiness Report
+- See `RELEASE_READINESS.md` for completed in-repo work and external launch blockers.
+- See `EXECUTION_TASKBOARD.md` for autonomous sweep evidence and blocker ownership.
